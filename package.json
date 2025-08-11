@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@capacitor/android": "^7.4.2",
+    "@capacitor/cli": "^7.4.2",
+    "@capacitor/core": "^7.4.2",
     "@google/generative-ai": "^0.24.1",
     "@types/node": "^16.18.126",
     "@types/react": "^19.1.9",
