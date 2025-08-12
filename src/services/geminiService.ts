@@ -10,14 +10,24 @@ export interface InterviewQuestion {
   category: 'beginner' | 'intermediate' | 'expert';
   field: string;
   subfield: string;
-  explanation?: string;
-  tips?: string[];
 }
 
 export interface InterviewQuestionsResponse {
   beginner: InterviewQuestion[];
   intermediate: InterviewQuestion[];
   expert: InterviewQuestion[];
+}
+
+export interface AnswerEvaluation {
+  marks: number;
+  feedback: string;
+}
+
+export interface AudioAnswerEvaluation {
+  marks: number;
+  confidence_marks: number;
+  fluency_marks: number;
+  feedback: string;
 }
 
 export class GeminiService {
@@ -64,12 +74,12 @@ Requirements:
 
 ${customNotes ? `Additional focus areas: ${customNotes}` : ''}
 
-IMPORTANT: Keep answers SHORT and HUMAN-LIKE:
-- Answers should be 2-3 sentences max, conversational tone
-- Use "I would..." or "You should..." style responses
-- Avoid overly technical jargon unless necessary
-- Make explanations practical and actionable
-- Tips should be brief, actionable advice
+IMPORTANT: Create REALISTIC INTERVIEW ANSWERS:
+- Answers should be 3-4 sentences max, conversational tone
+- Use "I" statements like "I would...", "I use...", "I can..."
+- Include practical examples and real-world scenarios
+- Sound like how an experienced developer would actually speak in an interview
+- Focus on demonstrating knowledge through examples, not just definitions
 
 Format the response as a JSON object with this exact structure:
 {
@@ -77,12 +87,10 @@ Format the response as a JSON object with this exact structure:
     {
       "id": "b1",
       "question": "Question text here",
-      "answer": "Short, conversational answer (2-3 sentences max)",
+      "answer": "Realistic interview answer with practical examples (3-4 sentences)",
       "category": "beginner",
       "field": "${field}",
-      "subfield": "${subfield}",
-      "explanation": "Brief, practical explanation (1-2 sentences)",
-      "tips": ["Short actionable tip", "Another quick tip"]
+      "subfield": "${subfield}"
     }
   ],
   "intermediate": [...],
@@ -109,14 +117,143 @@ Make questions relevant and practical. Focus on real-world scenarios that interv
         throw new Error('Invalid response structure from Gemini');
       }
 
+      // Clean up each question to ensure consistent structure
+      const cleanQuestions = (questions: any[]) => {
+        return questions.slice(0, 8).map(q => ({
+          id: q.id || `q${Math.random().toString(36).substr(2, 9)}`,
+          question: q.question || 'Question not provided',
+          answer: q.answer || 'Answer not provided',
+          category: q.category || 'beginner',
+          field: q.field || 'Information Technology',
+          subfield: q.subfield || 'Developer'
+        }));
+      };
+
       return {
-        beginner: parsed.beginner.slice(0, 8),
-        intermediate: parsed.intermediate.slice(0, 8),
-        expert: parsed.expert.slice(0, 8)
+        beginner: cleanQuestions(parsed.beginner),
+        intermediate: cleanQuestions(parsed.intermediate),
+        expert: cleanQuestions(parsed.expert)
       };
     } catch (error) {
       console.error('Error parsing Gemini response:', error);
       throw new Error('Failed to parse questions. Please try again.');
+    }
+  }
+
+
+  async evaluateAnswer(question: string, answer: string): Promise<AnswerEvaluation> {
+    const prompt = `Evaluate the following answer to the question: "${question}". 
+    
+Student Answer: "${answer}"
+
+Please evaluate this answer and provide:
+1. Marks out of 10 (be fair and realistic)
+2. SHORT feedback - maximum 2 sentences
+
+Return your response in this exact JSON format:
+{
+  "marks": 8,
+  "feedback": "Good understanding of basics. Add specific examples to improve."
+}
+
+Keep feedback brief and actionable. Be encouraging but honest.`;
+    
+    try {
+      const result = await this.model.generateContent(prompt);
+      const response = await result.response.text();
+      
+      // Extract JSON from the response
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('Invalid response format from Gemini');
+      }
+
+      const parsed = JSON.parse(jsonMatch[0]);
+      
+      // Validate the structure
+      if (typeof parsed.marks !== 'number' || typeof parsed.feedback !== 'string') {
+        throw new Error('Invalid response structure from Gemini');
+      }
+
+      // Ensure marks are within valid range (0-10)
+      const marks = Math.max(0, Math.min(10, parsed.marks));
+      
+      return {
+        marks: marks,
+        feedback: parsed.feedback
+      };
+    } catch (error) {
+      console.error('Error evaluating answer:', error);
+      // Return default response if evaluation fails
+      return {
+        marks: 5,
+        feedback: "Unable to evaluate answer at this time. Please try again or contact support."
+      };
+    }
+  }
+
+
+  async evaluateAudioAnswer(question: string, audioBlob: Blob): Promise<AudioAnswerEvaluation> {
+    try {
+      // Convert audio blob to base64 for Gemini
+      const arrayBuffer = await audioBlob.arrayBuffer()
+      const uint8Array = new Uint8Array(arrayBuffer)
+      const base64Audio = btoa(Array.from(uint8Array).map(byte => String.fromCharCode(byte)).join(''))
+      
+      // Get the model that supports audio
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
+      
+      const prompt = `You are an expert interview evaluator. Analyze this audio answer to the question: "${question}"
+
+Please evaluate the audio answer and provide a detailed assessment in the following JSON format:
+
+{
+  "marks": number (0-100),
+  "confidence_marks": number (0-100),
+  "fluency_marks": number (0-100),
+  "feedback": string (max 3 sentences, be specific and actionable),
+  "strengths": string (max 2 sentences),
+  "areas_for_improvement": string (max 2 sentences)
+}
+
+Evaluation Criteria:
+- Marks: Overall quality and accuracy of the answer
+- Confidence: How confident and assured the speaker sounds
+- Fluency: How smoothly and clearly the speech flows
+- Feedback: Specific, actionable advice for improvement (max 3 sentences)
+
+Please ensure the response is valid JSON.`
+
+      const result = await model.generateContent([
+        prompt,
+        {
+          inlineData: {
+            mimeType: audioBlob.type || "audio/wav",
+            data: base64Audio
+          }
+        }
+      ])
+
+      const response = await result.response
+      const text = response.text()
+      
+      // Extract JSON from response
+      const jsonMatch = text.match(/\{[\s\S]*\}/)
+      if (!jsonMatch) {
+        throw new Error('Invalid response format from Gemini')
+      }
+      
+      const evaluation = JSON.parse(jsonMatch[0])
+      
+      return {
+        marks: evaluation.marks || 0,
+        confidence_marks: evaluation.confidence_marks || 0,
+        fluency_marks: evaluation.fluency_marks || 0,
+        feedback: evaluation.feedback || 'No feedback provided',
+      }
+    } catch (error) {
+      console.error('Error evaluating audio answer:', error)
+      throw new Error('Failed to evaluate audio answer')
     }
   }
 }

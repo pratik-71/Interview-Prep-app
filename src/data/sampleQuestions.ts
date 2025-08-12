@@ -5,353 +5,199 @@ export const sampleQuestions: InterviewQuestionsResponse = {
     {
       id: 'b1',
       question: 'What is the DOM and how is it manipulated?',
-      answer: 'The DOM (Document Object Model) is a programming interface for HTML and XML documents. It represents the page as a tree structure where each node represents an object. The DOM can be manipulated using JavaScript to dynamically change the content, structure, and styling of a webpage.',
+      answer: 'The DOM is a tree-like representation of HTML documents where each element is a node. I manipulate it using JavaScript methods like getElementById, querySelector, and createElement. For example, I can change text content with innerHTML, add event listeners, or dynamically create new elements and append them to the page.',
       category: 'beginner',
       field: 'Information Technology',
-      subfield: 'Frontend Developer',
-      explanation: 'The DOM provides a way to interact with HTML elements as objects, allowing developers to create dynamic and interactive web applications.',
-      tips: [
-        'Use getElementById() for single elements',
-        'Use querySelector() for CSS selector-based selection',
-        'Always check if elements exist before manipulating them'
-      ]
+      subfield: 'Frontend Developer'
     },
     {
       id: 'b2',
       question: 'Explain the difference between HTML, CSS, and JavaScript.',
-      answer: 'HTML provides the structure and content of a webpage, CSS handles the styling and layout, and JavaScript adds interactivity and dynamic behavior. HTML is like the skeleton, CSS is like the skin and clothes, and JavaScript is like the muscles that make everything move.',
+      answer: 'HTML creates the structure and content of a webpage - like the foundation and walls of a house. CSS handles all the styling, colors, and layout - like the paint and furniture. JavaScript adds interactivity and dynamic behavior - like the electricity and plumbing that makes everything functional.',
       category: 'beginner',
       field: 'Information Technology',
-      subfield: 'Frontend Developer',
-      explanation: 'These three technologies work together to create modern, interactive web applications.',
-      tips: [
-        'HTML should focus on semantic structure',
-        'CSS should handle all visual presentation',
-        'JavaScript should enhance user experience without breaking functionality'
-      ]
+      subfield: 'Frontend Developer'
     },
     {
       id: 'b3',
       question: 'What are semantic HTML tags and why are they important?',
-      answer: 'Semantic HTML tags like <header>, <nav>, <main>, <section>, <article>, and <footer> provide meaning to the content structure. They improve accessibility, SEO, and code readability by clearly indicating the purpose of each content section.',
+      answer: 'Semantic tags like <header>, <nav>, <main>, <section>, <article>, and <footer> give meaning to content structure. They help screen readers understand the page layout, improve SEO by clearly indicating content purpose, and make code more readable for other developers.',
       category: 'beginner',
       field: 'Information Technology',
-      subfield: 'Frontend Developer',
-      explanation: 'Semantic tags help screen readers and search engines understand your content better.',
-      tips: [
-        'Use <nav> for navigation menus',
-        'Use <main> for the primary content area',
-        'Use <article> for self-contained content pieces'
-      ]
+      subfield: 'Frontend Developer'
     },
     {
       id: 'b4',
       question: 'Describe the box model in CSS.',
-      answer: 'The CSS box model consists of content, padding, border, and margin. Content is the actual content area, padding is the space between content and border, border is the line around the element, and margin is the space outside the border.',
+      answer: 'The CSS box model has four parts: content (the actual content), padding (space inside the border), border (the line around the element), and margin (space outside the border). I use this to control spacing and layout precisely, often setting box-sizing to border-box for easier calculations.',
       category: 'beginner',
       field: 'Information Technology',
-      subfield: 'Frontend Developer',
-      explanation: 'Understanding the box model is crucial for precise layout control in CSS.',
-      tips: [
-        'Use box-sizing: border-box for easier sizing calculations',
-        'Remember that margins can collapse between adjacent elements',
-        'Padding and borders are included in the element\'s total width/height'
-      ]
+      subfield: 'Frontend Developer'
     },
     {
       id: 'b5',
       question: 'What are inline, block, and inline-block elements?',
-      answer: 'Inline elements flow with text and don\'t create line breaks (like <span>), block elements create line breaks and take full width (like <div>), and inline-block elements flow with text but can have width/height set (like <img>).',
+      answer: 'Inline elements like <span> flow with text and don\'t create line breaks. Block elements like <div> take full width and create line breaks. Inline-block elements flow with text but can have width and height set, like <img> tags.',
       category: 'beginner',
       field: 'Information Technology',
-      subfield: 'Frontend Developer',
-      explanation: 'Understanding display properties helps control how elements flow and interact in the layout.',
-      tips: [
-        'Use inline for text-level elements',
-        'Use block for container elements',
-        'Use inline-block for elements that need both flow and sizing control'
-      ]
+      subfield: 'Frontend Developer'
     },
     {
       id: 'b6',
       question: 'Explain the difference between == and === in JavaScript.',
-      answer: '== performs type coercion (converts types before comparison), while === performs strict equality (checks both value and type). === is generally preferred as it\'s more predictable and prevents unexpected type conversions.',
+      answer: '== performs type coercion, converting types before comparison, while === checks both value and type without conversion. I always use === because it\'s more predictable and prevents bugs from unexpected type conversions.',
       category: 'beginner',
       field: 'Information Technology',
-      subfield: 'Frontend Developer',
-      explanation: 'Type coercion can lead to unexpected results, making === the safer choice.',
-      tips: [
-        'Always use === unless you specifically need type coercion',
-        'Be careful with null and undefined comparisons',
-        'Remember that 0 == false is true, but 0 === false is false'
-      ]
+      subfield: 'Frontend Developer'
     },
     {
       id: 'b7',
       question: 'What is event handling in JavaScript?',
-      answer: 'Event handling is the process of responding to user interactions like clicks, key presses, or form submissions. JavaScript uses event listeners to detect these actions and execute code in response.',
+      answer: 'Event handling is responding to user interactions like clicks, key presses, or form submissions. I use addEventListener to attach functions to events, and I can remove listeners when they\'re no longer needed to prevent memory leaks.',
       category: 'beginner',
       field: 'Information Technology',
-      subfield: 'Frontend Developer',
-      explanation: 'Event handling is fundamental to creating interactive web applications.',
-      tips: [
-        'Use addEventListener() instead of inline event handlers',
-        'Remember to remove event listeners when they\'re no longer needed',
-        'Use event delegation for dynamically created elements'
-      ]
+      subfield: 'Frontend Developer'
     },
     {
       id: 'b8',
       question: 'What is responsive design?',
-      answer: 'Responsive design is an approach to web design that makes web pages render well on a variety of devices and window or screen sizes. It uses flexible grids, layouts, images, and CSS media queries to adapt the layout to different screen sizes.',
+      answer: 'Responsive design makes websites work well on all devices by using flexible grids, relative units, and CSS media queries. I start with mobile-first design, use percentages and rem units instead of fixed pixels, and test across different screen sizes.',
       category: 'beginner',
       field: 'Information Technology',
-      subfield: 'Frontend Developer',
-      explanation: 'Responsive design ensures a good user experience across all devices.',
-      tips: [
-        'Start with mobile-first design approach',
-        'Use relative units (%, em, rem) instead of fixed pixels',
-        'Test on multiple devices and screen sizes'
-      ]
+      subfield: 'Frontend Developer'
     }
   ],
   intermediate: [
     {
       id: 'i1',
       question: 'Explain closures in JavaScript.',
-      answer: 'A closure is a function that has access to variables in its outer (enclosing) scope even after the outer function has returned. It creates a private scope for variables and maintains access to them.',
+      answer: 'A closure is a function that remembers and accesses variables from its outer scope even after the outer function has finished executing. I use them to create private variables and maintain state in functions. For example, I can create a counter function that keeps track of its count between calls.',
       category: 'intermediate',
       field: 'Information Technology',
-      subfield: 'Frontend Developer',
-      explanation: 'Closures are powerful for data privacy and creating factory functions.',
-      tips: [
-        'Closures can lead to memory leaks if not handled carefully',
-        'Use closures to create private variables',
-        'Be aware of the closure scope chain'
-      ]
+      subfield: 'Frontend Developer'
     },
     {
       id: 'i2',
       question: 'What is the event loop in JavaScript?',
-      answer: 'The event loop is a mechanism that allows JavaScript to perform non-blocking operations despite being single-threaded. It continuously checks the call stack and callback queue, pushing callbacks to the stack when it\'s empty.',
+      answer: 'The event loop is what allows JavaScript to handle asynchronous operations despite being single-threaded. It continuously checks if the call stack is empty and then moves callbacks from the task queue to the stack. This is why setTimeout and promises work without blocking the main thread.',
       category: 'intermediate',
       field: 'Information Technology',
-      subfield: 'Frontend Developer',
-      explanation: 'Understanding the event loop is crucial for asynchronous programming.',
-      tips: [
-        'setTimeout(0) doesn\'t execute immediately',
-        'Promises have higher priority than setTimeout',
-        'The event loop processes microtasks before macrotasks'
-      ]
+      subfield: 'Frontend Developer'
     },
     {
       id: 'i3',
       question: 'Explain CSS Grid vs Flexbox.',
-      answer: 'CSS Grid is a two-dimensional layout system for rows and columns, while Flexbox is a one-dimensional layout system for either rows or columns. Grid is better for overall page layouts, while Flexbox is better for component layouts.',
+      answer: 'CSS Grid is for two-dimensional layouts with rows and columns, perfect for overall page structure. Flexbox is for one-dimensional layouts, either rows or columns, great for component layouts. I use Grid for page layouts and Flexbox for navigation bars, card layouts, and component alignment.',
       category: 'intermediate',
       field: 'Information Technology',
-      subfield: 'Frontend Developer',
-      explanation: 'Choose the right tool based on your layout needs.',
-      tips: [
-        'Use Grid for page-level layouts',
-        'Use Flexbox for component-level layouts',
-        'You can combine both for complex layouts'
-      ]
+      subfield: 'Frontend Developer'
     },
-    {
-      id: 'i4',
-      question: 'What are JavaScript Promises?',
-      answer: 'Promises are objects representing the eventual completion or failure of an asynchronous operation. They provide a cleaner alternative to callback-based asynchronous code and help avoid callback hell.',
-      category: 'intermediate',
-      field: 'Information Technology',
-      subfield: 'Frontend Developer',
-      explanation: 'Promises make asynchronous code more readable and manageable.',
-      tips: [
-        'Always handle promise rejections',
-        'Use async/await for cleaner promise syntax',
-        'Promise.all() waits for all promises to resolve'
-      ]
-    },
-    {
-      id: 'i5',
-      question: 'Explain CSS specificity.',
-      answer: 'CSS specificity determines which CSS rules are applied when multiple rules target the same element. It\'s calculated based on the number of ID selectors, class selectors, and element selectors.',
-      category: 'intermediate',
-      field: 'Information Technology',
-      subfield: 'Frontend Developer',
-      explanation: 'Understanding specificity helps avoid CSS conflicts and debugging issues.',
-      tips: [
-        'ID selectors have highest specificity',
-        'Use !important sparingly',
-        'Inline styles have higher specificity than external CSS'
-      ]
-    },
-    {
-      id: 'i6',
-      question: 'What is the Virtual DOM?',
-      answer: 'The Virtual DOM is a lightweight copy of the actual DOM that React uses to optimize rendering. It allows React to batch DOM updates and only apply the necessary changes, improving performance.',
-      category: 'intermediate',
-      field: 'Information Technology',
-      subfield: 'Frontend Developer',
-      explanation: 'The Virtual DOM is key to React\'s performance optimization.',
-      tips: [
-        'React compares Virtual DOM with real DOM',
-        'Only changed elements are re-rendered',
-        'Keys help React identify which items have changed'
-      ]
-    },
-    {
-      id: 'i7',
-      question: 'Explain CORS (Cross-Origin Resource Sharing).',
-      answer: 'CORS is a security feature that controls which web pages can access resources from a different origin. It prevents malicious websites from making requests to other domains on behalf of users.',
-      category: 'intermediate',
-      field: 'Information Technology',
-      subfield: 'Frontend Developer',
-      explanation: 'CORS is essential for secure web applications.',
-      tips: [
-        'CORS is enforced by browsers, not servers',
-        'Preflight requests are sent for complex requests',
-        'Credentials require specific CORS configuration'
-      ]
-    },
-    {
-      id: 'i8',
-      question: 'What is the difference between let, const, and var?',
-      answer: 'var has function scope and is hoisted, let has block scope and is not hoisted, and const has block scope, is not hoisted, and cannot be reassigned. let and const are preferred in modern JavaScript.',
-      category: 'intermediate',
-      field: 'Information Technology',
-      subfield: 'Frontend Developer',
-      explanation: 'Understanding scope and hoisting is crucial for avoiding bugs.',
-      tips: [
-        'Use const by default',
-        'Use let when you need to reassign variables',
-        'Avoid var in modern JavaScript'
-      ]
-    }
+         {
+       id: 'i4',
+       question: 'What are JavaScript Promises?',
+       answer: 'Promises are objects representing the eventual completion or failure of an asynchronous operation. I use them to handle async operations like API calls and file operations. They provide a cleaner alternative to callback-based code and help avoid callback hell by using .then() and .catch() methods.',
+       category: 'intermediate',
+       field: 'Information Technology',
+       subfield: 'Frontend Developer'
+     },
+         {
+       id: 'i5',
+       question: 'Explain CSS specificity.',
+       answer: 'CSS specificity determines which CSS rules are applied when multiple rules target the same element. I calculate it by counting ID selectors (highest priority), class selectors, and element selectors. This helps me avoid conflicts and debug styling issues by understanding which rules will take precedence.',
+       category: 'intermediate',
+       field: 'Information Technology',
+       subfield: 'Frontend Developer'
+     },
+         {
+       id: 'i6',
+       question: 'What is the Virtual DOM?',
+       answer: 'The Virtual DOM is a lightweight copy of the actual DOM that React uses to optimize rendering. I understand it as React\'s way of batching DOM updates by comparing the Virtual DOM with the real DOM and only applying the necessary changes. This significantly improves performance by minimizing expensive DOM manipulations.',
+       category: 'intermediate',
+       field: 'Information Technology',
+       subfield: 'Frontend Developer'
+     },
+         {
+       id: 'i7',
+       question: 'Explain CORS (Cross-Origin Resource Sharing).',
+       answer: 'CORS is a security feature that controls which web pages can access resources from a different origin. I implement it on the server side by setting appropriate headers like Access-Control-Allow-Origin. It prevents malicious websites from making unauthorized requests to other domains and is essential for building secure web applications.',
+       category: 'intermediate',
+       field: 'Information Technology',
+       subfield: 'Frontend Developer'
+     },
+     {
+       id: 'i8',
+       question: 'What is the difference between let, const, and var?',
+       answer: 'var has function scope and is hoisted, let has block scope and is not hoisted, and const has block scope, is not hoisted, and cannot be reassigned. I use const by default for values that won\'t change, let when I need to reassign variables, and avoid var entirely in modern JavaScript to prevent scope-related bugs.',
+       category: 'intermediate',
+       field: 'Information Technology',
+       subfield: 'Frontend Developer'
+     }
   ],
   expert: [
-    {
-      id: 'e1',
-      question: 'Explain the concept of progressive enhancement.',
-      answer: 'Progressive enhancement is a design philosophy that starts with a basic, functional experience and progressively adds advanced features for users with more capable browsers or devices. It ensures accessibility and functionality for all users.',
-      category: 'expert',
-      field: 'Information Technology',
-      subfield: 'Frontend Developer',
-      explanation: 'This approach ensures your application works for everyone, regardless of their technology constraints.',
-      tips: [
-        'Start with semantic HTML as the foundation',
-        'Add CSS for presentation and layout',
-        'Enhance with JavaScript for interactivity',
-        'Test with JavaScript disabled'
-      ]
-    },
-    {
-      id: 'e2',
-      question: 'How would you implement a custom hook for form validation in React?',
-      answer: 'Create a custom hook that manages form state, validation rules, and error messages. Use useState for form data, useEffect for validation, and return the form state, validation functions, and error handling.',
-      category: 'expert',
-      field: 'Information Technology',
-      subfield: 'Frontend Developer',
-      explanation: 'Custom hooks promote code reusability and separation of concerns.',
-      tips: [
-        'Use a reducer for complex form state management',
-        'Implement debounced validation for performance',
-        'Return a validation function that can be called on submit',
-        'Consider using a validation library like Yup or Joi'
-      ]
-    },
-    {
-      id: 'e3',
-      question: 'Explain the concept of code splitting and lazy loading.',
-      answer: 'Code splitting divides your bundle into smaller chunks that can be loaded on demand. Lazy loading defers the loading of non-critical resources until they\'re needed, improving initial page load performance.',
-      category: 'expert',
-      field: 'Information Technology',
-      subfield: 'Frontend Developer',
-      explanation: 'These techniques are essential for optimizing large applications.',
-      tips: [
-        'Use React.lazy() for component-level code splitting',
-        'Implement route-based code splitting',
-        'Monitor bundle sizes with webpack-bundle-analyzer',
-        'Consider the trade-off between bundle size and network requests'
-      ]
-    },
-    {
-      id: 'e4',
-      question: 'How would you implement a custom state management solution?',
-      answer: 'Create a centralized store using Context API or a custom event system. Implement actions, reducers, and middleware for handling complex state updates. Consider immutability and performance optimization.',
-      category: 'expert',
-      field: 'Information Technology',
-      subfield: 'Frontend Developer',
-      explanation: 'Custom state management gives you full control over your application\'s data flow.',
-      tips: [
-        'Use immer for immutable updates',
-        'Implement middleware for logging and debugging',
-        'Consider using a pub/sub pattern for complex state relationships',
-        'Plan your state structure carefully to avoid unnecessary re-renders'
-      ]
-    },
-    {
-      id: 'e5',
-      question: 'Explain the concept of micro-frontends.',
-      answer: 'Micro-frontends is an architectural style where frontend applications are composed of independent, deployable micro-applications. Each team can work independently on different parts of the application.',
-      category: 'expert',
-      field: 'Information Technology',
-      subfield: 'Frontend Developer',
-      explanation: 'This approach scales development teams and enables independent deployments.',
-      tips: [
-        'Use Module Federation for sharing dependencies',
-        'Implement a consistent design system across micro-apps',
-        'Consider routing and state management strategies',
-        'Plan for shared authentication and user context'
-      ]
-    },
-    {
-      id: 'e6',
-      question: 'How would you optimize a React application for performance?',
-      answer: 'Use React.memo, useMemo, and useCallback to prevent unnecessary re-renders. Implement virtualization for long lists, use code splitting, optimize bundle size, and implement proper key props for lists.',
-      category: 'expert',
-      field: 'Information Technology',
-      subfield: 'Frontend Developer',
-      explanation: 'Performance optimization is crucial for user experience and business metrics.',
-      tips: [
-        'Profile your application with React DevTools Profiler',
-        'Use React.lazy() for component-level code splitting',
-        'Implement windowing for large datasets',
-        'Consider using a state management library like Zustand or Redux Toolkit'
-      ]
-    },
-    {
-      id: 'e7',
-      question: 'Explain the concept of accessibility (a11y) in web development.',
-      answer: 'Accessibility ensures that web applications are usable by people with disabilities. This includes proper semantic HTML, ARIA labels, keyboard navigation, screen reader support, and color contrast compliance.',
-      category: 'expert',
-      field: 'Information Technology',
-      subfield: 'Frontend Developer',
-      explanation: 'Accessibility is not just a legal requirement but also improves usability for all users.',
-      tips: [
-        'Use semantic HTML elements',
-        'Implement proper ARIA labels and roles',
-        'Ensure keyboard navigation works for all interactive elements',
-        'Test with screen readers and keyboard-only navigation',
-        'Follow WCAG guidelines for compliance'
-      ]
-    },
-    {
-      id: 'e8',
-      question: 'How would you implement a design system?',
-      answer: 'Create a component library with consistent design tokens (colors, typography, spacing), reusable components, documentation, and versioning. Use Storybook for component development and testing, and implement a design token system.',
-      category: 'expert',
-      field: 'Information Technology',
-      subfield: 'Frontend Developer',
-      explanation: 'A design system ensures consistency and accelerates development across teams.',
-      tips: [
-        'Start with design tokens (colors, typography, spacing)',
-        'Use CSS custom properties for theming',
-        'Implement component variants and states',
-        'Create comprehensive documentation and examples',
-        'Consider using tools like Storybook or Chromatic'
-      ]
-    }
+         {
+       id: 'e1',
+       question: 'Explain the concept of progressive enhancement.',
+       answer: 'Progressive enhancement is a design philosophy that starts with a basic, functional experience and progressively adds advanced features for users with more capable browsers or devices. I implement this by building a solid HTML foundation first, then layering CSS for presentation, and finally adding JavaScript enhancements. This ensures my applications work for everyone, regardless of their technology constraints.',
+       category: 'expert',
+       field: 'Information Technology',
+       subfield: 'Frontend Developer'
+     },
+         {
+       id: 'e2',
+       question: 'How would you implement a custom hook for form validation in React?',
+       answer: 'I would create a custom hook that manages form state, validation rules, and error messages using useState for form data and useEffect for validation. The hook would return the form state, validation functions, and error handling, making it reusable across different forms. I\'d also implement debounced validation for performance and consider using a reducer for complex state management.',
+       category: 'expert',
+       field: 'Information Technology',
+       subfield: 'Frontend Developer'
+     },
+     {
+       id: 'e3',
+       question: 'Explain the concept of code splitting and lazy loading.',
+       answer: 'Code splitting divides your bundle into smaller chunks that can be loaded on demand, while lazy loading defers the loading of non-critical resources until they\'re needed. I implement this using React.lazy() for component-level splitting and route-based splitting for different pages. This significantly improves initial page load performance by reducing the initial bundle size.',
+       category: 'expert',
+       field: 'Information Technology',
+       subfield: 'Frontend Developer'
+     },
+     {
+       id: 'e4',
+       question: 'How would you implement a custom state management solution?',
+       answer: 'I would create a centralized store using Context API or a custom event system with actions, reducers, and middleware for handling complex state updates. I\'d implement immutability patterns and performance optimizations like selective re-rendering. For complex state relationships, I might use a pub/sub pattern and consider using immer for immutable updates.',
+       category: 'expert',
+       field: 'Information Technology',
+       subfield: 'Frontend Developer'
+     },
+     {
+       id: 'e5',
+       question: 'Explain the concept of micro-frontends.',
+       answer: 'Micro-frontends is an architectural style where frontend applications are composed of independent, deployable micro-applications. I implement this using Module Federation for sharing dependencies and ensure a consistent design system across micro-apps. Each team can work independently on different parts while maintaining shared authentication and user context.',
+       category: 'expert',
+       field: 'Information Technology',
+       subfield: 'Frontend Developer'
+     },
+     {
+       id: 'e6',
+       question: 'How would you optimize a React application for performance?',
+       answer: 'I use React.memo, useMemo, and useCallback to prevent unnecessary re-renders and implement virtualization for long lists. I also use code splitting with React.lazy(), optimize bundle size, and implement proper key props for lists. I profile the application with React DevTools Profiler to identify bottlenecks and implement windowing for large datasets.',
+       category: 'expert',
+       field: 'Information Technology',
+       subfield: 'Frontend Developer'
+     },
+     {
+       id: 'e7',
+       question: 'Explain the concept of accessibility (a11y) in web development.',
+       answer: 'Accessibility ensures that web applications are usable by people with disabilities through proper semantic HTML, ARIA labels, keyboard navigation, screen reader support, and color contrast compliance. I implement this by using semantic HTML elements, proper ARIA labels and roles, ensuring keyboard navigation works for all interactive elements, and testing with screen readers and keyboard-only navigation while following WCAG guidelines.',
+       category: 'expert',
+       field: 'Information Technology',
+       subfield: 'Frontend Developer'
+     },
+     {
+       id: 'e8',
+       question: 'How would you implement a design system?',
+       answer: 'I would create a component library with consistent design tokens for colors, typography, and spacing, along with reusable components, comprehensive documentation, and versioning. I\'d use Storybook for component development and testing, implement CSS custom properties for theming, and create component variants and states. The goal is to ensure consistency and accelerate development across teams.',
+       category: 'expert',
+       field: 'Information Technology',
+       subfield: 'Frontend Developer'
+     }
   ]
 };
 

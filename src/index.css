@@ -44,33 +44,35 @@ code {
 
 /* Custom scrollbar styles */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 10px;
+  width: 8px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 8px;
+  background: rgba(241, 245, 249, 0.5);
+  border-radius: 10px;
   margin: 4px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: #00b2d6;
-  border-radius: 8px;
-  border: 2px solid #f1f5f9;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: content-box;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #0099b3;
+  background-clip: content-box;
 }
 
 .custom-scrollbar::-webkit-scrollbar-corner {
-  background: #f1f5f9;
+  background: transparent;
 }
 
 /* Firefox scrollbar */
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: #00b2d6 #f1f5f9;
+  scrollbar-color: #00b2d6 rgba(241, 245, 249, 0.5);
 }
 
 /* Flexbox height fixes */
