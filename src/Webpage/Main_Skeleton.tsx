@@ -378,7 +378,7 @@ const MainSkeleton = () => {
 
     // ===== MAIN RENDER =====
     return (
-        <div className='flex flex-col h-screen'>
+        <div className='flex flex-col h-screen mt-2'>
 
             {
                 isTestStarted ? (

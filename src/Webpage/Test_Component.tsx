@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useThemeStore } from '../zustand_store/theme_store'
 import { AnswerEvaluation, AudioAnswerEvaluation, GeminiService } from '../services/geminiService'
+import { Device } from '@capacitor/device'
 
 const Test_Component = ({question, onBack}: {question: any, onBack: () => void}) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
@@ -448,13 +449,83 @@ const RecordAnswer = ({setAnswer, setShowRecordingModal, handleSubmitAudio, curr
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null)
 
   const [isEvaluating, setIsEvaluating] = useState(false)
+  const [permissionStatus, setPermissionStatus] = useState<'granted' | 'denied' | 'prompt' | 'checking'>('checking')
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Check if device is mobile and get permissions
+  useEffect(() => {
+    const checkDeviceAndPermissions = async () => {
+      try {
+        // Check if device is mobile
+        const info = await Device.getInfo()
+        setIsMobile(info.platform === 'ios' || info.platform === 'android')
+        
+        // Check microphone permission
+        if (navigator.permissions && navigator.permissions.query) {
+          const permission = await navigator.permissions.query({ name: 'microphone' as PermissionName })
+          setPermissionStatus(permission.state)
+        } else {
+          // Fallback for browsers that don't support permissions API
+          setPermissionStatus('prompt')
+        }
+      } catch (error) {
+        console.log('Device info not available, assuming web browser')
+        setIsMobile(false)
+        setPermissionStatus('prompt')
+      }
+    }
+    
+    checkDeviceAndPermissions()
+  }, [])
+
+  // Request microphone permission
+  const requestMicrophonePermission = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      setPermissionStatus('granted')
+      stream.getTracks().forEach(track => track.stop()) // Stop the stream immediately
+      return true
+    } catch (error) {
+      console.error('Microphone permission denied:', error)
+      setPermissionStatus('denied')
+      return false
+    }
+  }
 
   // Start recording
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const recorder = new MediaRecorder(stream)
-            const chunks: Blob[] = []
+      // Check permission first
+      if (permissionStatus === 'denied') {
+        alert('Microphone permission is required. Please enable it in your device settings.')
+        return
+      }
+      
+      if (permissionStatus === 'prompt') {
+        const hasPermission = await requestMicrophonePermission()
+        if (!hasPermission) {
+          alert('Microphone permission is required to record audio.')
+          return
+        }
+      }
+      
+      // Get audio stream with mobile-optimized settings
+      const constraints = {
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          sampleRate: isMobile ? 44100 : 48000,
+          channelCount: 1
+        }
+      }
+      
+      const stream = await navigator.mediaDevices.getUserMedia(constraints)
+      const recorder = new MediaRecorder(stream, {
+        mimeType: isMobile ? 'audio/webm' : 'audio/wav'
+      })
+      
+      const chunks: Blob[] = []
       
       recorder.ondataavailable = (e) => chunks.push(e.data)
       
@@ -470,14 +541,18 @@ const RecordAnswer = ({setAnswer, setShowRecordingModal, handleSubmitAudio, curr
       
       recorder.onstop = () => {
         clearInterval(timer)
-        const blob = new Blob(chunks, { type: 'audio/wav' })
+        const blob = new Blob(chunks, { type: isMobile ? 'audio/webm' : 'audio/wav' })
         setAudioBlob(blob)
         const url = URL.createObjectURL(blob)
         setAudioUrl(url)
       }
     } catch (error) {
       console.error('Error accessing microphone:', error)
-      alert('Please allow microphone access to record audio')
+      if (isMobile) {
+        alert('Please allow microphone access in your device settings and try again.')
+      } else {
+        alert('Please allow microphone access to record audio')
+      }
     }
   }
 
@@ -551,18 +626,65 @@ const RecordAnswer = ({setAnswer, setShowRecordingModal, handleSubmitAudio, curr
 
       {/* Content */}
       <div className='p-6'>
+        {/* Permission Status */}
+        {isMobile && (
+          <div className='mb-4 p-3 rounded-lg border-2' style={{ 
+            backgroundColor: permissionStatus === 'granted' ? `${primaryColor}10` : `${primaryColor}05`,
+            borderColor: permissionStatus === 'granted' ? `${primaryColor}30` : `${primaryColor}20`
+          }}>
+            <div className='flex items-center space-x-2'>
+              <div className={`w-3 h-3 rounded-full ${
+                permissionStatus === 'granted' ? 'bg-green-500' : 
+                permissionStatus === 'denied' ? 'bg-red-500' : 'bg-yellow-500'
+              }`}></div>
+              <span className='text-sm font-medium' style={{ color: tertiaryColor }}>
+                {permissionStatus === 'granted' ? 'Microphone Access Granted' :
+                 permissionStatus === 'denied' ? 'Microphone Access Denied' :
+                 permissionStatus === 'checking' ? 'Checking Permissions...' : 'Permission Required'}
+              </span>
+            </div>
+            {permissionStatus === 'denied' && (
+              <p className='text-xs mt-1' style={{ color: `${tertiaryColor}70` }}>
+                Please enable microphone access in your device settings to record audio.
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Recording Controls */}
         <div className='space-y-3 mb-6'>
+          {/* Permission Request Button */}
+          {isMobile && permissionStatus === 'prompt' && (
+            <button 
+              onClick={requestMicrophonePermission}
+              className='w-full flex items-center justify-center space-x-3 py-4 px-6 rounded-xl text-white font-medium transition-all duration-200 hover:scale-105 shadow-lg'
+              style={{ backgroundColor: '#f59e0b' }}
+            >
+              <svg className='w-6 h-6' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z' />
+              </svg>
+              <span className='text-lg'>Grant Microphone Permission</span>
+            </button>
+          )}
+
           {!isRecording ? (
             <button 
               onClick={startRecording}
-              className='w-full flex items-center justify-center space-x-3 py-4 px-6 rounded-xl text-white font-medium transition-all duration-200 hover:scale-105 shadow-lg'
-              style={{ backgroundColor: primaryColor }}
+              disabled={permissionStatus === 'denied'}
+              className={`w-full flex items-center justify-center space-x-3 py-4 px-6 rounded-xl font-medium transition-all duration-200 hover:scale-105 shadow-lg ${
+                permissionStatus === 'denied' ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+              style={{ 
+                backgroundColor: permissionStatus === 'denied' ? `${primaryColor}50` : primaryColor,
+                color: 'white'
+              }}
             >
               <svg className='w-6 h-6' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
                 <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z' />
               </svg>
-              <span className='text-lg'>Start Recording</span>
+              <span className='text-lg'>
+                {permissionStatus === 'denied' ? 'Permission Denied' : 'Start Recording'}
+              </span>
             </button>
           ) : (
             <button 
