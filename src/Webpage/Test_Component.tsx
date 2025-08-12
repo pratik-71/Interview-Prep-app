@@ -446,7 +446,7 @@ const RecordAnswer = ({setAnswer, setShowRecordingModal, handleSubmitAudio, curr
   const [isPlaying, setIsPlaying] = useState(false)
   const [recordingTime, setRecordingTime] = useState(0)
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null)
-  const [audioChunks, setAudioChunks] = useState<Blob[]>([])
+
   const [isEvaluating, setIsEvaluating] = useState(false)
 
   // Start recording
@@ -454,7 +454,7 @@ const RecordAnswer = ({setAnswer, setShowRecordingModal, handleSubmitAudio, curr
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       const recorder = new MediaRecorder(stream)
-      const chunks: Blob[] = []
+            const chunks: Blob[] = []
       
       recorder.ondataavailable = (e) => chunks.push(e.data)
       
@@ -474,7 +474,6 @@ const RecordAnswer = ({setAnswer, setShowRecordingModal, handleSubmitAudio, curr
         setAudioBlob(blob)
         const url = URL.createObjectURL(blob)
         setAudioUrl(url)
-        setAudioChunks([])
       }
     } catch (error) {
       console.error('Error accessing microphone:', error)
