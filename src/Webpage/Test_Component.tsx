@@ -481,7 +481,18 @@ const RecordAnswer = ({setAnswer, setShowRecordingModal, handleSubmitAudio, curr
   // Request microphone permission
   const requestMicrophonePermission = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      // Request permission with mobile-optimized settings
+      const constraints = {
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          sampleRate: isMobile ? 44100 : 48000,
+          channelCount: 1
+        }
+      }
+      
+      const stream = await navigator.mediaDevices.getUserMedia(constraints)
       setPermissionStatus('granted')
       stream.getTracks().forEach(track => track.stop()) // Stop the stream immediately
       return true
@@ -495,18 +506,11 @@ const RecordAnswer = ({setAnswer, setShowRecordingModal, handleSubmitAudio, curr
   // Start recording
   const startRecording = async () => {
     try {
-      // Check permission first
-      if (permissionStatus === 'denied') {
-        alert('Microphone permission is required. Please enable it in your device settings.')
+      // Always request permission when user clicks Start Recording
+      const hasPermission = await requestMicrophonePermission()
+      if (!hasPermission) {
+        alert('Microphone permission is required to record audio.')
         return
-      }
-      
-      if (permissionStatus === 'prompt') {
-        const hasPermission = await requestMicrophonePermission()
-        if (!hasPermission) {
-          alert('Microphone permission is required to record audio.')
-          return
-        }
       }
       
       // Get audio stream with mobile-optimized settings
@@ -521,9 +525,20 @@ const RecordAnswer = ({setAnswer, setShowRecordingModal, handleSubmitAudio, curr
       }
       
       const stream = await navigator.mediaDevices.getUserMedia(constraints)
-      const recorder = new MediaRecorder(stream, {
-        mimeType: isMobile ? 'audio/webm' : 'audio/wav'
-      })
+      
+      // Handle MIME type compatibility for Android
+      let mimeType = 'audio/webm'
+      if (MediaRecorder.isTypeSupported('audio/webm')) {
+        mimeType = 'audio/webm'
+      } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+        mimeType = 'audio/mp4'
+      } else if (MediaRecorder.isTypeSupported('audio/ogg')) {
+        mimeType = 'audio/ogg'
+      } else {
+        mimeType = 'audio/webm' // fallback
+      }
+      
+      const recorder = new MediaRecorder(stream, { mimeType })
       
       const chunks: Blob[] = []
       
@@ -541,7 +556,7 @@ const RecordAnswer = ({setAnswer, setShowRecordingModal, handleSubmitAudio, curr
       
       recorder.onstop = () => {
         clearInterval(timer)
-        const blob = new Blob(chunks, { type: isMobile ? 'audio/webm' : 'audio/wav' })
+        const blob = new Blob(chunks, { type: mimeType })
         setAudioBlob(blob)
         const url = URL.createObjectURL(blob)
         setAudioUrl(url)
@@ -549,7 +564,13 @@ const RecordAnswer = ({setAnswer, setShowRecordingModal, handleSubmitAudio, curr
     } catch (error) {
       console.error('Error accessing microphone:', error)
       if (isMobile) {
-        alert('Please allow microphone access in your device settings and try again.')
+        if (error instanceof DOMException && error.name === 'NotAllowedError') {
+          alert('Microphone permission denied. Please enable it in your device settings.')
+        } else if (error instanceof DOMException && error.name === 'NotSupportedError') {
+          alert('Audio recording is not supported on this device.')
+        } else {
+          alert('Microphone access error. Please check your device settings and try again.')
+        }
       } else {
         alert('Please allow microphone access to record audio')
       }
@@ -638,14 +659,14 @@ const RecordAnswer = ({setAnswer, setShowRecordingModal, handleSubmitAudio, curr
                 permissionStatus === 'denied' ? 'bg-red-500' : 'bg-yellow-500'
               }`}></div>
               <span className='text-sm font-medium' style={{ color: tertiaryColor }}>
-                {permissionStatus === 'granted' ? 'Microphone Access Granted' :
+                {permissionStatus === 'granted' ? 'Microphone Ready' :
                  permissionStatus === 'denied' ? 'Microphone Access Denied' :
-                 permissionStatus === 'checking' ? 'Checking Permissions...' : 'Permission Required'}
+                 permissionStatus === 'checking' ? 'Checking...' : 'Click Start Recording to Grant Permission'}
               </span>
             </div>
             {permissionStatus === 'denied' && (
               <p className='text-xs mt-1' style={{ color: `${tertiaryColor}70` }}>
-                Please enable microphone access in your device settings to record audio.
+                Please enable microphone access in your device settings.
               </p>
             )}
           </div>
@@ -653,38 +674,16 @@ const RecordAnswer = ({setAnswer, setShowRecordingModal, handleSubmitAudio, curr
 
         {/* Recording Controls */}
         <div className='space-y-3 mb-6'>
-          {/* Permission Request Button */}
-          {isMobile && permissionStatus === 'prompt' && (
-            <button 
-              onClick={requestMicrophonePermission}
-              className='w-full flex items-center justify-center space-x-3 py-4 px-6 rounded-xl text-white font-medium transition-all duration-200 hover:scale-105 shadow-lg'
-              style={{ backgroundColor: '#f59e0b' }}
-            >
-              <svg className='w-6 h-6' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z' />
-              </svg>
-              <span className='text-lg'>Grant Microphone Permission</span>
-            </button>
-          )}
-
           {!isRecording ? (
             <button 
               onClick={startRecording}
-              disabled={permissionStatus === 'denied'}
-              className={`w-full flex items-center justify-center space-x-3 py-4 px-6 rounded-xl font-medium transition-all duration-200 hover:scale-105 shadow-lg ${
-                permissionStatus === 'denied' ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
-              style={{ 
-                backgroundColor: permissionStatus === 'denied' ? `${primaryColor}50` : primaryColor,
-                color: 'white'
-              }}
+              className='w-full flex items-center justify-center space-x-3 py-4 px-6 rounded-xl text-white font-medium transition-all duration-200 hover:scale-105 shadow-lg'
+              style={{ backgroundColor: primaryColor }}
             >
               <svg className='w-6 h-6' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z' />
+                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3 3z' />
               </svg>
-              <span className='text-lg'>
-                {permissionStatus === 'denied' ? 'Permission Denied' : 'Start Recording'}
-              </span>
+              <span className='text-lg'>Start Recording</span>
             </button>
           ) : (
             <button 
