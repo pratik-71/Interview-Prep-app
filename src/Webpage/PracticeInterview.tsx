@@ -1,23 +1,21 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { fieldsData, Subfield } from '../data/fieldsData';
 import { useThemeStore } from '../zustand_store/theme_store';
-import GeminiService, { InterviewQuestionsResponse } from '../services/geminiService';
+import { useQuestionsStore } from '../zustand_store/questions_store';
+import GeminiService from '../services/geminiService';
 import LoadingQuestions from './LoadingQuestions';
 
-interface PracticeInterviewProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onQuestionsGenerated: (questions: InterviewQuestionsResponse) => void;
-}
-
-const PracticeInterview: React.FC<PracticeInterviewProps> = ({ isOpen, onClose, onQuestionsGenerated }) => {
+const PracticeInterview: React.FC = () => {
   const [selectedField, setSelectedField] = useState<string>('');
   const [selectedSubfield, setSelectedSubfield] = useState<string>('');
   const [customInput, setCustomInput] = useState<string>('');
   const [availableSubfields, setAvailableSubfields] = useState<Subfield[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
   const { primaryColor, secondaryColor, tertiaryColor } = useThemeStore();
+  const { setQuestions } = useQuestionsStore();
 
   useEffect(() => {
     if (selectedField) {
@@ -31,16 +29,6 @@ const PracticeInterview: React.FC<PracticeInterviewProps> = ({ isOpen, onClose, 
       setCustomInput('');
     }
   }, [selectedField]);
-
-  // Reset form when modal closes
-  useEffect(() => {
-    if (!isOpen) {
-      setSelectedField('');
-      setSelectedSubfield('');
-      setCustomInput('');
-      setAvailableSubfields([]);
-    }
-  }, [isOpen]);
 
   const handleStartPractice = async () => {
     if (selectedField && selectedSubfield) {
@@ -58,7 +46,9 @@ const PracticeInterview: React.FC<PracticeInterviewProps> = ({ isOpen, onClose, 
           customInput
         );
         
-        onQuestionsGenerated(generatedQuestions);
+        // Store questions in Zustand and navigate to questions page
+        setQuestions(generatedQuestions);
+        navigate('/practice/questions');
         setIsLoading(false);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to generate questions');
@@ -67,57 +57,38 @@ const PracticeInterview: React.FC<PracticeInterviewProps> = ({ isOpen, onClose, 
     }
   };
 
-  if (!isOpen) return null;
-
   // Show loading state
   if (isLoading) {
     return (
-      <LoadingQuestions
-        field={fieldsData.find(f => f.id === selectedField)?.name || selectedField}
-        subfield={availableSubfields.find(s => s.id === selectedSubfield)?.name || selectedSubfield}
-        onCancel={() => {
-          setIsLoading(false);
-          setError(null);
-        }}
-      />
+      <div className="flex-1 flex flex-col p-2 sm:p-4 md:p-6 overflow-hidden" style={{ backgroundColor: secondaryColor }}>
+        <LoadingQuestions
+          field={fieldsData.find(f => f.id === selectedField)?.name || selectedField}
+          subfield={availableSubfields.find(s => s.id === selectedSubfield)?.name || selectedSubfield}
+          onCancel={() => {
+            setIsLoading(false);
+            setError(null);
+          }}
+        />
+      </div>
     );
   }
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center p-4 z-50" style={{ backgroundColor: `${tertiaryColor}cc` }}>
-      <div className="w-full max-w-lg mx-auto" style={{ backgroundColor: secondaryColor }}>
+    <div className="flex-1 flex flex-col p-2 sm:p-4 md:p-6 overflow-hidden" style={{ backgroundColor: secondaryColor }}>
+      <div className="w-full max-w-lg mx-auto">
         <div className="rounded-2xl shadow-2xl overflow-hidden border" style={{ borderColor: `${primaryColor}30` }}>
           {/* Header */}
           <div className="px-6 py-5" style={{ backgroundColor: `${primaryColor}08` }}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: primaryColor }}>
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold" style={{ color: tertiaryColor }}>Practice Interview</h2>
-                </div>
-              </div>
-              <button
-                onClick={onClose}
-                className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110"
-                style={{ 
-                  backgroundColor: `${primaryColor}15`,
-                  color: primaryColor
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = `${primaryColor}25`;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = `${primaryColor}15`;
-                }}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: primaryColor }}>
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-              </button>
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold" style={{ color: tertiaryColor }}>Practice Interview</h2>
+                <p className="text-sm" style={{ color: `${tertiaryColor}80` }}>Select your field and subfield</p>
+              </div>
             </div>
           </div>
 
@@ -270,33 +241,12 @@ const PracticeInterview: React.FC<PracticeInterviewProps> = ({ isOpen, onClose, 
               </div>
             )}
 
-            {/* Action Buttons */}
-            <div className="flex space-x-4 pt-6">
-              <button
-                onClick={onClose}
-                className="flex-1 px-6 py-3 border-2 rounded-xl transition-all duration-300 font-medium"
-                style={{ 
-                  borderColor: `${primaryColor}30`,
-                  color: tertiaryColor,
-                  backgroundColor: secondaryColor
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = `${primaryColor}08`;
-                  e.currentTarget.style.borderColor = primaryColor;
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = secondaryColor;
-                  e.currentTarget.style.borderColor = `${primaryColor}30`;
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
-              >
-                Cancel
-              </button>
+            {/* Action Button */}
+            <div className="pt-6">
               <button
                 onClick={handleStartPractice}
                 disabled={!selectedField || !selectedSubfield}
-                className="flex-1 px-6 py-3 rounded-xl transition-all duration-300 font-medium disabled:cursor-not-allowed"
+                className="w-full px-6 py-3 rounded-xl transition-all duration-300 font-medium disabled:cursor-not-allowed"
                 style={{ 
                   backgroundColor: (!selectedField || !selectedSubfield) ? '#9ca3af' : primaryColor,
                   color: 'white'

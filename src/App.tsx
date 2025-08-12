@@ -1,9 +1,28 @@
 
 import React from 'react';
-import MainSkeleton from './Webpage/Main_Skeleton';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import './index.css';
+import Dashboard from './Webpage/Dashboard';
+import PracticeInterview from './Webpage/PracticeInterview';
+import QuestionsDisplay from './Webpage/QuestionsDisplay';
+import TestComponent from './Webpage/Test_Component';
+import Layout from './Webpage/Layout';
 
 function App() {
-  return <MainSkeleton />;
+  return (
+    <Router>
+      <div className="App">
+        <Layout>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/practice" element={<PracticeInterview />} />
+            <Route path="/practice/questions" element={<QuestionsDisplay />} />
+            <Route path="/test" element={<TestComponent />} />
+          </Routes>
+        </Layout>
+      </div>
+    </Router>
+  );
 }
 
 export default App;

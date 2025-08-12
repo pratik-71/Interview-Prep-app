@@ -1,9 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useThemeStore } from '../zustand_store/theme_store'
+import { useQuestionsStore } from '../zustand_store/questions_store'
 import { AnswerEvaluation, AudioAnswerEvaluation, GeminiService } from '../services/geminiService'
 import { Device } from '@capacitor/device'
 
-const Test_Component = ({question, onBack}: {question: any, onBack: () => void}) => {
+const Test_Component: React.FC = () => {
+  const navigate = useNavigate();
+  const { questions } = useQuestionsStore();
+  const allQuestions = questions ? [
+    ...(questions.beginner || []),
+    ...(questions.intermediate || []),
+    ...(questions.expert || [])
+  ] : [];
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [answer, setAnswer] = useState('')
   const [difficulty, setDifficulty] = useState('beginner')
@@ -44,7 +53,7 @@ const Test_Component = ({question, onBack}: {question: any, onBack: () => void})
         setIsEvaluatingText(true)
         
         // Get current question for context
-        const currentQuestion = question[currentQuestionIndex]?.question || 'Interview question'
+        const currentQuestion = allQuestions[currentQuestionIndex]?.question || 'Interview question'
         
         // Evaluate text answer using Gemini
         const geminiService = GeminiService.getInstance()
@@ -77,7 +86,7 @@ const Test_Component = ({question, onBack}: {question: any, onBack: () => void})
   }
 
   // Check if we have questions and if current index is valid
-  if (!question || !Array.isArray(question) || question.length === 0) {
+  if (!allQuestions || !Array.isArray(allQuestions) || allQuestions.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: secondaryColor }}>
         <div className="text-center p-8">
@@ -95,7 +104,7 @@ const Test_Component = ({question, onBack}: {question: any, onBack: () => void})
   }
 
   // Filter questions by selected difficulty
-  const filteredQuestions = question.filter((q: any) => q.category === difficulty)
+  const filteredQuestions = allQuestions.filter((q: any) => q.category === difficulty)
 
   if (currentQuestionIndex >= filteredQuestions.length) {
     return (
@@ -129,7 +138,7 @@ const Test_Component = ({question, onBack}: {question: any, onBack: () => void})
        
        <div className='flex justify-between mb-4'>
         <button 
-          onClick={onBack}
+          onClick={() => navigate('/practice/questions')}
           className='py-2 px-4 rounded-lg text-white transition-all duration-300 hover:scale-105' 
           style={{ backgroundColor: primaryColor }}
         > 
@@ -255,7 +264,7 @@ const Test_Component = ({question, onBack}: {question: any, onBack: () => void})
                 setCurrentQuestionIndex(currentQuestionIndex + 1)
                 setAnswer('')
               }}
-              disabled={currentQuestionIndex === question.length - 1}
+              disabled={currentQuestionIndex === allQuestions.length - 1}
               className="flex-1 px-4 py-2 rounded-xl font-semibold text-lg transition-all duration-300 hover:scale-105 border-2 shadow-lg"
               style={{ 
                 borderColor: primaryColor,
@@ -425,7 +434,7 @@ const Test_Component = ({question, onBack}: {question: any, onBack: () => void})
                      setAnswer={setAnswer} 
                      setShowRecordingModal={setShowRecordingModal} 
                      handleSubmitAudio={handleSubmitAudio}
-                     currentQuestion={question[currentQuestionIndex]?.question || 'Interview question'}
+                     currentQuestion={allQuestions[currentQuestionIndex]?.question || 'Interview question'}
                      setAudioResult={setAudioResult}
                      setIsAudioResult={setIsAudioResult}
                    />
@@ -625,7 +634,7 @@ const RecordAnswer = ({setAnswer, setShowRecordingModal, handleSubmitAudio, curr
                 <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z' />
               </svg>
             </div>
-            <div>
+    <div>
               <h3 className='text-lg font-semibold' style={{ color: tertiaryColor }}>
                 Audio Answer
               </h3>
