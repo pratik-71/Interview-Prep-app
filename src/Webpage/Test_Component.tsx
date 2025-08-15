@@ -1,21 +1,40 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useThemeStore } from '../zustand_store/theme_store'
 import { useQuestionsStore } from '../zustand_store/questions_store'
 import { AnswerEvaluation, AudioAnswerEvaluation, GeminiService } from '../services/geminiService'
 import { Device } from '@capacitor/device'
 
 const Test_Component: React.FC = () => {
-  const navigate = useNavigate();
   const { questions } = useQuestionsStore();
-  const allQuestions = questions ? [
-    ...(questions.beginner || []),
-    ...(questions.intermediate || []),
-    ...(questions.expert || [])
-  ] : [];
+  
+  // Select 15 questions: 5 from each difficulty level
+  const getSelectedQuestions = () => {
+    if (!questions) return [];
+    
+    const beginnerQuestions = questions.beginner || [];
+    const intermediateQuestions = questions.intermediate || [];
+    const expertQuestions = questions.expert || [];
+    
+    // Take 5 from each difficulty (or all if less than 5 available)
+    const selectedBeginner = beginnerQuestions.slice(0, 5);
+    const selectedIntermediate = intermediateQuestions.slice(0, 5);
+    const selectedExpert = expertQuestions.slice(0, 5);
+    
+    // Combine and shuffle
+    const allSelected = [...selectedBeginner, ...selectedIntermediate, ...selectedExpert];
+    
+    // Fisher-Yates shuffle algorithm
+    for (let i = allSelected.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [allSelected[i], allSelected[j]] = [allSelected[j], allSelected[i]];
+    }
+    
+    return allSelected;
+  };
+  
+  const allQuestions = getSelectedQuestions();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [answer, setAnswer] = useState('')
-  const [difficulty, setDifficulty] = useState('beginner')
   const [showRecordingModal, setShowRecordingModal] = useState(false)
   const [hasResponseArrived,setHasResponseArrived] = useState(false)
   const [isAudioResult, setIsAudioResult] = useState(false)
@@ -28,7 +47,7 @@ const Test_Component: React.FC = () => {
   const textResultRef = useRef<HTMLDivElement>(null)
   const audioResultRef = useRef<HTMLDivElement>(null)
   
-    // Get colors from theme store
+  // Get colors from theme store
   const { primaryColor, secondaryColor, tertiaryColor } = useThemeStore()
 
   // Auto-scroll to results when they arrive
@@ -89,10 +108,6 @@ const Test_Component: React.FC = () => {
     }
   }
 
-
-
-
-
   // Check if we have questions and if current index is valid
   if (!allQuestions || !Array.isArray(allQuestions) || allQuestions.length === 0) {
     return (
@@ -111,24 +126,20 @@ const Test_Component: React.FC = () => {
     )
   }
 
-  // Filter questions by selected difficulty
-  const filteredQuestions = allQuestions.filter((q: any) => q.category === difficulty)
-
-  if (currentQuestionIndex >= filteredQuestions.length) {
+  if (currentQuestionIndex >= allQuestions.length) {
     return (
       <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: secondaryColor }}>
         <div className="text-center p-8">
           <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center" 
                style={{ backgroundColor: `${primaryColor}15` }}>
             <svg className="w-10 h-10" style={{ color: primaryColor }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a10 10 0 100-20 10 10 0 000 20z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-10 10 10 0 100-20 10 10 0 000 20z" />
             </svg>
           </div>
 
           <h2 className='text-2xl font-bold mb-4' style={{ color: tertiaryColor }}>{Marks.reduce((acc, curr) => acc + curr, 0)}/80</h2>
           <h2 className="text-2xl font-bold mb-4" style={{ color: tertiaryColor }}>Test Completed!</h2>
           <p className="text-lg mb-6" style={{ color: `${tertiaryColor}80` }}>You've answered all the questions</p>
-
 
           <button 
             onClick={() => setCurrentQuestionIndex(0)}
@@ -137,68 +148,16 @@ const Test_Component: React.FC = () => {
           >
             Restart Test
           </button>
-
-          <select 
-          value={difficulty} 
-          onChange={(e) => setDifficulty(e.target.value)} 
-          className="py-2 px-4 rounded-lg border-2 focus:outline-none cursor-pointer bg-white"
-          style={{ 
-            borderColor: `${primaryColor}30`,
-            color: tertiaryColor
-          }}
-          onFocus={(e) => {
-            e.target.style.boxShadow = `0 0 0 4px ${primaryColor}20`;
-            e.target.style.borderColor = primaryColor;
-            e.target.style.backgroundColor = `${primaryColor}05`;
-          }}
-          onBlur={(e) => {
-            e.target.style.boxShadow = 'none';
-            e.target.style.borderColor = `${primaryColor}30`;
-            e.target.style.backgroundColor = 'white';
-          }}
-        >
-          <option value="beginner" style={{ color: tertiaryColor }}>Beginner</option>
-          <option value="intermediate" style={{ color: tertiaryColor }}>Intermediate</option>
-          <option value="expert" style={{ color: tertiaryColor }}>Expert</option>
-        </select>
         </div>
       </div>
     )
   }
-  const currentQuestion = filteredQuestions[currentQuestionIndex]
-  const progressPercentage = ((currentQuestionIndex + 1) / filteredQuestions.length) * 100
+  
+  const currentQuestion = allQuestions[currentQuestionIndex]
+  const progressPercentage = ((currentQuestionIndex + 1) / allQuestions.length) * 100
 
   return (
     <div className="h-screen p-4 sm:p-6 md:p-8 overflow-y-auto custom-scrollbar" style={{ backgroundColor: secondaryColor }}>
-      {/* Header Section */}
-       
-       <div className='flex justify-end mb-4'>
-        <select 
-          value={difficulty} 
-          onChange={(e) => setDifficulty(e.target.value)} 
-          className="py-2 px-4 rounded-lg border-2 focus:outline-none cursor-pointer bg-white"
-          style={{ 
-            borderColor: `${primaryColor}30`,
-            color: tertiaryColor
-          }}
-          onFocus={(e) => {
-            e.target.style.boxShadow = `0 0 0 4px ${primaryColor}20`;
-            e.target.style.borderColor = primaryColor;
-            e.target.style.backgroundColor = `${primaryColor}05`;
-          }}
-          onBlur={(e) => {
-            e.target.style.boxShadow = 'none';
-            e.target.style.borderColor = `${primaryColor}30`;
-            e.target.style.backgroundColor = 'white';
-          }}
-        >
-          <option value="beginner" style={{ color: tertiaryColor }}>Beginner</option>
-          <option value="intermediate" style={{ color: tertiaryColor }}>Intermediate</option>
-          <option value="expert" style={{ color: tertiaryColor }}>Expert</option>
-        </select>
-        
-       </div>
-
       <div className="max-w-4xl mx-auto">
         {/* Progress Bar */}
         <div className="mb-8">
@@ -207,7 +166,7 @@ const Test_Component: React.FC = () => {
               Interview Test
             </h1>
             <span className="text-lg font-semibold" style={{ color: primaryColor }}>
-              {currentQuestionIndex + 1} / {filteredQuestions.length}
+              {currentQuestionIndex + 1} / {allQuestions.length}
             </span>
           </div>
           
@@ -226,11 +185,20 @@ const Test_Component: React.FC = () => {
         {/* Question Card */}
         <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 md:p-10 mb-8">
 
-          {/* Question Text */}
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 leading-relaxed" 
-              style={{ color: tertiaryColor }}>
-            {currentQuestion.question}
-          </h2>
+          {/* Question Header with Difficulty */}
+          <div className="flex justify-between items-start mb-4">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold leading-relaxed flex-1" 
+                style={{ color: tertiaryColor }}>
+              {currentQuestion.question}
+            </h2>
+            <span className="ml-4 px-3 py-1 rounded-full text-sm font-semibold text-white capitalize"
+                  style={{ 
+                    backgroundColor: currentQuestion.category === 'beginner' ? '#10b981' : 
+                                 currentQuestion.category === 'intermediate' ? '#f59e0b' : '#ef4444'
+                  }}>
+              {currentQuestion.category}
+            </span>
+          </div>
 
           {/* Answer Input */}
           <div className="mb-4">
@@ -674,7 +642,7 @@ const RecordAnswer = ({setAnswer, setShowRecordingModal, handleSubmitAudio, curr
           <div className='flex items-center space-x-3'>
             <div className='w-10 h-10 rounded-full flex items-center justify-center' style={{ backgroundColor: primaryColor }}>
               <svg className='w-5 h-5 text-white' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z' />
+                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3 3z' />
               </svg>
             </div>
     <div>

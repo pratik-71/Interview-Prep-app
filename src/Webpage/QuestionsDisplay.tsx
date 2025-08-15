@@ -55,8 +55,8 @@ const QuestionsDisplay: React.FC = () => {
         gsap.to(answerElement, {
           height: 0,
           opacity: 0,
-          duration: 0.3,
-          ease: "power2.out",
+          duration: 0.15,
+          ease: "power1.in",
           onComplete: () => {
             setOpenQuestionId(null);
           }
@@ -71,8 +71,8 @@ const QuestionsDisplay: React.FC = () => {
           gsap.to(prevAnswerElement, {
             height: 0,
             opacity: 0,
-            duration: 0.2,
-            ease: "power2.out"
+            duration: 0.1,
+            ease: "power1.in"
           });
         }
       }
@@ -88,12 +88,12 @@ const QuestionsDisplay: React.FC = () => {
             { 
               height: "auto", 
               opacity: 1, 
-              duration: 0.4, 
-              ease: "power2.out" 
+              duration: 0.2, 
+              ease: "power1.out" 
             }
           );
         }
-      }, 50);
+      }, 25);
     }
   };
 
@@ -108,7 +108,7 @@ const QuestionsDisplay: React.FC = () => {
   };
 
   const renderHeader = () => (
-    <div className='flex items-center justify-between mb-1 sm:mb-2 md:mb-4 px-2 pt-4'>
+    <div className='flex items-center justify-between mb-1 sm:mb-2 md:mb-2 px-2 pt-2'>
       <h2 className='text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold'
         style={{ color: tertiaryColor }}>
         Interview Questions
@@ -128,7 +128,7 @@ const QuestionsDisplay: React.FC = () => {
     const categories = ['beginner', 'intermediate', 'expert'] as const;
 
     return (
-      <div className='flex space-x-1 sm:space-x-2 mb-4 sm:mb-6 md:mb-8 justify-center'>
+      <div className='flex space-x-1 sm:space-x-2 mb-4 sm:mb-4 md:mb-4 justify-center'>
         {categories.map((category, index) => {
           const isActive = activeCategory === category;
           const categoryColors = [
@@ -231,8 +231,7 @@ const QuestionsDisplay: React.FC = () => {
           <div className='mt-4 pt-4 border-t' style={{ borderColor: `${primaryColor}20` }}>
             <div className='space-y-4'>
               <div>
-                <h4 className='text-sm sm:text-base md:text-lg font-semibold mb-3'
-                  style={{ color: primaryColor }}>Sample Answer:</h4>
+                
                 <div className='p-4 rounded-lg' style={{ backgroundColor: `${primaryColor}05`, border: `1px solid ${primaryColor}20` }}>
                   <p className='text-sm sm:text-base md:text-lg leading-relaxed'
                     style={{ color: tertiaryColor }}>{question.answer}</p>
@@ -297,7 +296,7 @@ const QuestionsDisplay: React.FC = () => {
   }
 
   return (
-    <div className='space-y-6 flex-1 flex flex-col min-h-0'>
+    <div className='space-y-4 flex-1 flex flex-col min-h-0'>
       {renderHeader()}
       {renderCategoryTabs()}
       {renderQuestionsList()}
