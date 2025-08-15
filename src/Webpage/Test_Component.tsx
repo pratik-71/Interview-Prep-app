@@ -41,7 +41,6 @@ const Test_Component: React.FC = () => {
   const [audioResult, setAudioResult] = useState<AudioAnswerEvaluation | null>(null)
   const [testResult, setTestResult] = useState<AnswerEvaluation | null>(null)
   const [isEvaluatingText, setIsEvaluatingText] = useState(false)
-  const [Marks,setMarks] = useState<number[]>([])
   
   // Refs for auto-scrolling to results
   const textResultRef = useRef<HTMLDivElement>(null)
@@ -83,11 +82,6 @@ const Test_Component: React.FC = () => {
         setTestResult(evaluation)
         setIsAudioResult(false)
         setHasResponseArrived(true)
-        
-        // Store marks for current question
-        if (evaluation.marks !== undefined) {
-          Marks[currentQuestionIndex] = evaluation.marks
-        }
         
         console.log('Text answer evaluated:', evaluation)
       }
@@ -137,8 +131,7 @@ const Test_Component: React.FC = () => {
             </svg>
           </div>
 
-          <h2 className='text-2xl font-bold mb-4' style={{ color: tertiaryColor }}>{Marks.reduce((acc, curr) => acc + curr, 0)}/80</h2>
-          <h2 className="text-2xl font-bold mb-4" style={{ color: tertiaryColor }}>Test Completed!</h2>
+          <h2 className='text-2xl font-bold mb-4' style={{ color: tertiaryColor }}>Test Completed!</h2>
           <p className="text-lg mb-6" style={{ color: `${tertiaryColor}80` }}>You've answered all the questions</p>
 
           <button 
@@ -268,9 +261,6 @@ const Test_Component: React.FC = () => {
               onClick={() => {
                 setCurrentQuestionIndex(currentQuestionIndex + 1)
                 setAnswer('')
-                if (testResult?.marks !== undefined) {
-                  Marks[currentQuestionIndex] = testResult.marks
-                }
               }}
               disabled={currentQuestionIndex === allQuestions.length - 1}
               className="flex-1 px-4 py-2 rounded-xl font-semibold text-lg transition-all duration-300 hover:scale-105 border-2 shadow-lg"
@@ -470,7 +460,6 @@ const RecordAnswer = ({setAnswer, setShowRecordingModal, handleSubmitAudio, curr
   const [isEvaluating, setIsEvaluating] = useState(false)
   const [permissionStatus, setPermissionStatus] = useState<'granted' | 'denied' | 'prompt' | 'checking'>('checking')
   const [isMobile, setIsMobile] = useState(false)
-  const [Marks,setMarks] = useState<number[]>([])
 
   // Check if device is mobile and get permissions
   useEffect(() => {
