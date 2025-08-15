@@ -1,6 +1,6 @@
 {
   "name": "frontend",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "dependencies": {
     "@capacitor/android": "^7.4.2",
@@ -12,6 +12,7 @@
     "@types/node": "^16.18.126",
     "@types/react": "^19.1.9",
     "@types/react-dom": "^19.1.7",
+    "gsap": "^3.13.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.8.0",
@@ -22,7 +23,14 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "version:patch": "npm version patch",
+    "version:minor": "npm version minor",
+    "version:major": "npm version major",
+    "build:mobile": "npm run build && npx cap sync",
+    "build:android": "npm run build && npx cap sync && npx cap build android",
+    "clean": "rm -rf build/ && npx cap clean && npx cap sync",
+    "update-version": "node -e \"const pkg=require('./package.json'); const fs=require('fs'); const version=pkg.version; const buildNumber=Date.now(); const buildDate=new Date().toISOString(); const versionConfig='// This file is automatically updated during build process\\n// Do not edit manually\\n\\nexport const APP_VERSION = \\''+version+'\\';\\nexport const BUILD_NUMBER = \\''+buildNumber+'\\';\\nexport const BUILD_DATE = \\''+buildDate+'\\';\\n\\nexport const VERSION_CONFIG = {\\n  version: APP_VERSION,\\n  buildNumber: BUILD_NUMBER,\\n  buildDate: BUILD_DATE,\\n  minRequiredVersion: \\'1.0.0\\'\\n};'; fs.writeFileSync('./src/config/version.ts', versionConfig); console.log('Version config updated to', version);\""
   },
   "eslintConfig": {
     "extends": [

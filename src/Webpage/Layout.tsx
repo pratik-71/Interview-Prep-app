@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useThemeStore } from '../zustand_store/theme_store';
+import UpdateNotification from '../components/UpdateNotification';
+import VersionService from '../services/versionService';
+import { gsap } from 'gsap';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -9,7 +12,13 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { primaryColor, secondaryColor, tertiaryColor } = useThemeStore();
+  const { primaryColor,  tertiaryColor } = useThemeStore();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+  // Refs for GSAP animations
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  const backdropRef = useRef<HTMLDivElement>(null);
+  const hamburgerRef = useRef<HTMLButtonElement>(null);
 
   const isActiveRoute = (path: string) => {
     if (path === '/') {
@@ -20,64 +29,262 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const handleNavigation = (path: string) => {
     navigate(path);
+    
+    // Simple close animation
+    gsap.to(sidebarRef.current, {
+      x: -256,
+      duration: 0.2,
+      ease: "power1.in",
+      onComplete: () => setSidebarOpen(false)
+    });
+    
+    gsap.to(backdropRef.current, {
+      opacity: 0,
+      duration: 0.15
+    });
   };
+
+  const toggleSidebar = () => {
+    if (!sidebarOpen) {
+      // Opening sidebar
+      setSidebarOpen(true);
+      
+      // Simple slide in animation
+      gsap.to(sidebarRef.current, {
+        x: 0,
+        duration: 0.25,
+        ease: "power1.out"
+      });
+      
+      // Simple backdrop fade
+      gsap.to(backdropRef.current, {
+        opacity: 1,
+        duration: 0.2
+      });
+    } else {
+      // Closing sidebar
+      gsap.to(sidebarRef.current, {
+        x: -256,
+        duration: 0.2,
+        ease: "power1.in",
+        onComplete: () => setSidebarOpen(false)
+      });
+      
+      gsap.to(backdropRef.current, {
+        opacity: 0,
+        duration: 0.15
+      });
+    }
+  };
+
+  // Initialize version service and start update checking
+  useEffect(() => {
+    const versionService = VersionService.getInstance();
+    versionService.startUpdateChecking(5); // Check every 5 minutes
+
+    return () => {
+      versionService.stopUpdateChecking();
+    };
+  }, []);
+
+  // Initialize sidebar position
+  useEffect(() => {
+    if (sidebarRef.current) {
+      gsap.set(sidebarRef.current, { x: -256 });
+    }
+  }, []);
 
   return (
     <div className="flex flex-col h-screen">
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {children}
+      {/* Top Navbar */}
+      <nav 
+        className="flex items-center justify-between px-4 sm:px-6 py-3 shadow-sm"
+        style={{ backgroundColor: 'white', borderBottom: `2px solid ${primaryColor}20` }}
+      >
+        {/* Left: Hamburger Menu */}
+        <button
+          ref={hamburgerRef}
+          onClick={toggleSidebar}
+          className="p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200"
+        >
+          <svg className="w-6 h-6" style={{ color: tertiaryColor }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+
+        {/* Center: App Logo/Title */}
+        <div className="flex items-center">
+          <h1 className="text-xl font-bold" style={{ color: primaryColor }}>
+            Interview Prep
+          </h1>
       </div>
 
-      {/* Bottom Navigation */}
-      <div 
-        className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4"
-        style={{ backgroundColor: secondaryColor, borderTop: `2px solid ${primaryColor}20` }}
-      >
-        <div className="flex justify-around">
-          {/* Dashboard Tab */}
+        {/* Right: Profile Photo */}
+        <div className="flex items-center space-x-3">
+          <button 
+            onClick={() => navigate('/profile')}
+            className="p-1 rounded-full hover:bg-gray-100 transition-colors duration-200"
+          >
+            <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center hover:bg-gray-400 transition-colors duration-200">
+              <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+          </button>
+        </div>
+      </nav>
+
+      {/* Sidebar Navigation */}
+      {sidebarOpen && (
+        <>
+                     {/* Backdrop */}
+           <div 
+             ref={backdropRef}
+             className="fixed inset-0 bg-black bg-opacity-50 z-40"
+             onClick={() => {
+               gsap.to(sidebarRef.current, {
+                 x: -256,
+                 duration: 0.2,
+                 ease: "power1.in",
+                 onComplete: () => setSidebarOpen(false)
+               });
+               
+               gsap.to(backdropRef.current, {
+                 opacity: 0,
+                 duration: 0.15
+               });
+             }}
+           />
+          
+          {/* Sidebar */}
+          <div 
+            ref={sidebarRef}
+            className="fixed left-0 top-0 h-full w-64 bg-white shadow-xl z-50"
+          >
+            <div className="p-6">
+              {/* Sidebar Header */}
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-xl font-bold" style={{ color: primaryColor }}>
+                  Menu
+                </h2>
+                                 <button
+                   onClick={() => {
+                     gsap.to(sidebarRef.current, {
+                       x: -256,
+                       duration: 0.2,
+                       ease: "power1.in",
+                       onComplete: () => setSidebarOpen(false)
+                     });
+                     
+                     gsap.to(backdropRef.current, {
+                       opacity: 0,
+                       duration: 0.15
+                     });
+                   }}
+                   className="p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200"
+                 >
+                  <svg className="w-5 h-5" style={{ color: tertiaryColor }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Navigation Links */}
+              <div className="space-y-2">
+                {/* Dashboard */}
           <button
             onClick={() => handleNavigation('/')}
-            className={`flex flex-col items-center py-2 sm:py-3 md:py-4 px-3 sm:px-4 md:px-6 rounded-lg sm:rounded-xl transition-all duration-300 ${
-              isActiveRoute('/') ? 'text-white shadow-lg' : 'hover:scale-105'
+                   className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                     isActiveRoute('/') ? 'text-white shadow-lg' : 'hover:bg-gray-100'
             }`}
             style={{
               backgroundColor: isActiveRoute('/') ? primaryColor : 'transparent',
               color: isActiveRoute('/') ? 'white' : tertiaryColor
             }}
           >
-            <div className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 mb-1 sm:mb-2">
+                  <div className="w-5 h-5">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
             </div>
-            <span className="text-xs sm:text-sm md:text-base font-medium sm:font-semibold">
-              Dashboard
-            </span>
+                  <span className="font-medium">Dashboard</span>
           </button>
 
-          {/* Practice Interview Tab */}
+                {/* Practice Interview */}
           <button
             onClick={() => handleNavigation('/practice')}
-            className={`flex flex-col items-center py-2 sm:py-3 md:py-4 px-3 sm:px-4 md:px-6 rounded-lg sm:rounded-xl transition-all duration-300 ${
-              isActiveRoute('/practice') ? 'text-white shadow-lg' : 'hover:scale-105'
+                   className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                     isActiveRoute('/practice') ? 'text-white shadow-lg' : 'hover:bg-gray-100'
             }`}
             style={{
               backgroundColor: isActiveRoute('/practice') ? primaryColor : 'transparent',
               color: isActiveRoute('/practice') ? 'white' : tertiaryColor
             }}
           >
-            <div className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 mb-1 sm:mb-2">
+                  <div className="w-5 h-5">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <span className="text-xs sm:text-sm md:text-base font-medium sm:font-semibold">
-              Practice Interview
-            </span>
+                  <span className="font-medium">Practice Interview</span>
+                </button>
+
+                {/* Test Component */}
+                                 <button
+                   onClick={() => handleNavigation('/test')}
+                   className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                     isActiveRoute('/test') ? 'text-white shadow-lg' : 'hover:bg-gray-100'
+                   }`}
+                  style={{
+                    backgroundColor: isActiveRoute('/test') ? primaryColor : 'transparent',
+                    color: isActiveRoute('/test') ? 'white' : tertiaryColor
+                  }}
+                >
+                  <div className="w-5 h-5">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                  </div>
+                  <span className="font-medium">Take Test</span>
+                </button>
+              </div>
+
+              {/* Divider */}
+              <div className="my-6 border-t border-gray-200"></div>
+
+              {/* Additional Menu Items */}
+              <div className="space-y-2">
+                <button className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-100 transition-colors duration-200">
+                  <div className="w-5 h-5">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </div>
+                  <span className="font-medium" style={{ color: tertiaryColor }}>Settings</span>
+                </button>
+
+                <button className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-100 transition-colors duration-200">
+                  <div className="w-5 h-5">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <span className="font-medium" style={{ color: tertiaryColor }}>Help</span>
           </button>
         </div>
       </div>
+          </div>
+        </>
+      )}
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {children}
+      </div>
+
+      {/* Update Notification */}
+      <UpdateNotification />
     </div>
   );
 };

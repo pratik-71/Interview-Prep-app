@@ -1,8 +1,7 @@
 
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './index.css';
-import Dashboard from './Webpage/Dashboard';
 import PracticeInterview from './Webpage/PracticeInterview';
 import QuestionsDisplay from './Webpage/QuestionsDisplay';
 import TestComponent from './Webpage/Test_Component';
@@ -14,7 +13,7 @@ function App() {
       <div className="App">
         <Layout>
           <Routes>
-            <Route path="/" element={<Dashboard />} />
+            <Route path="/" element={<Navigate to="/practice" replace />} />
             <Route path="/practice" element={<PracticeInterview />} />
             <Route path="/practice/questions" element={<QuestionsDisplay />} />
             <Route path="/test" element={<TestComponent />} />

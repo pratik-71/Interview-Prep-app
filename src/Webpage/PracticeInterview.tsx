@@ -1,60 +1,91 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fieldsData, Subfield } from '../data/fieldsData';
 import { useThemeStore } from '../zustand_store/theme_store';
 import { useQuestionsStore } from '../zustand_store/questions_store';
 import GeminiService from '../services/geminiService';
 import LoadingQuestions from './LoadingQuestions';
+import { sampleQuestions } from '../data/sampleQuestions';
+
+interface TechOption {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+}
 
 const PracticeInterview: React.FC = () => {
-  const [selectedField, setSelectedField] = useState<string>('');
-  const [selectedSubfield, setSelectedSubfield] = useState<string>('');
-  const [customInput, setCustomInput] = useState<string>('');
-  const [availableSubfields, setAvailableSubfields] = useState<Subfield[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [selectedTech, setSelectedTech] = useState<string>('');
+  
   const navigate = useNavigate();
   const { primaryColor, secondaryColor, tertiaryColor } = useThemeStore();
   const { setQuestions } = useQuestionsStore();
 
-  useEffect(() => {
-    if (selectedField) {
-      const field = fieldsData.find(f => f.id === selectedField);
-      setAvailableSubfields(field ? field.subfields : []);
-      setSelectedSubfield(''); // Reset subfield when field changes
-      setCustomInput(''); // Reset custom input when field changes
-    } else {
-      setAvailableSubfields([]);
-      setSelectedSubfield('');
-      setCustomInput('');
+  const techOptions: TechOption[] = [
+    {
+      id: 'java',
+      name: 'Java',
+      icon: '☕',
+      color: '#f89820'
+    },
+    {
+      id: 'python',
+      name: 'Python',
+      icon: '🐍',
+      color: '#3776ab'
+    },
+    {
+      id: 'javascript',
+      name: 'JavaScript',
+      icon: '⚡',
+      color: '#f7df1e'
+    },
+    {
+      id: 'cpp',
+      name: 'C++',
+      icon: '⚙️',
+      color: '#00599c'
+    },
+    {
+      id: 'reactjs',
+      name: 'React.js',
+      icon: '⚛️',
+      color: '#61dafb'
+    },
+    {
+      id: 'nodejs',
+      name: 'Node.js',
+      icon: '🟢',
+      color: '#339933'
     }
-  }, [selectedField]);
+  ];
 
-  const handleStartPractice = async () => {
-    if (selectedField && selectedSubfield) {
-      setIsLoading(true);
-      setError(null);
+  const handleTechClick = async (techId: string) => {
+    setIsLoading(true);
+    setSelectedTech(techId);
+    
+    try {
+      const geminiService = GeminiService.getInstance();
+      const tech = techOptions.find(t => t.id === techId);
       
-      try {
-        const geminiService = GeminiService.getInstance();
-        const fieldName = fieldsData.find(f => f.id === selectedField)?.name || selectedField;
-        const subfieldName = availableSubfields.find(s => s.id === selectedSubfield)?.name || selectedSubfield;
-        
-        const generatedQuestions = await geminiService.generateInterviewQuestions(
-          fieldName,
-          subfieldName,
-          customInput
-        );
-        
-        // Store questions in Zustand and navigate to questions page
-        setQuestions(generatedQuestions);
-        navigate('/practice/questions');
-        setIsLoading(false);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to generate questions');
-        setIsLoading(false);
-      }
+      const generatedQuestions = await geminiService.generateInterviewQuestions(
+        tech?.name || techId,
+        'Programming',
+        ''
+      );
+      
+      setQuestions(generatedQuestions);
+      navigate('/practice/questions');
+      setIsLoading(false);
+    } catch (err) {
+      console.error('Failed to generate questions:', err);
+      setIsLoading(false);
     }
+  };
+
+  const handleGoOffline = () => {
+    setQuestions(sampleQuestions);
+    navigate('/practice/questions');
   };
 
   // Show loading state
@@ -62,11 +93,11 @@ const PracticeInterview: React.FC = () => {
     return (
       <div className="flex-1 flex flex-col p-2 sm:p-4 md:p-6 overflow-hidden" style={{ backgroundColor: secondaryColor }}>
         <LoadingQuestions
-          field={fieldsData.find(f => f.id === selectedField)?.name || selectedField}
-          subfield={availableSubfields.find(s => s.id === selectedSubfield)?.name || selectedSubfield}
+          field={techOptions.find(t => t.id === selectedTech)?.name || selectedTech}
+          subfield="Programming"
           onCancel={() => {
             setIsLoading(false);
-            setError(null);
+            setSelectedTech('');
           }}
         />
       </div>
@@ -74,202 +105,80 @@ const PracticeInterview: React.FC = () => {
   }
 
   return (
-    <div className="flex-1 flex flex-col p-2 sm:p-4 md:p-6 overflow-hidden" style={{ backgroundColor: secondaryColor }}>
-      <div className="w-full max-w-lg mx-auto">
-        <div className="rounded-2xl shadow-2xl overflow-hidden border" style={{ borderColor: `${primaryColor}30` }}>
-          {/* Header */}
-          <div className="px-6 py-5" style={{ backgroundColor: `${primaryColor}08` }}>
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: primaryColor }}>
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold" style={{ color: tertiaryColor }}>Practice Interview</h2>
-                <p className="text-sm" style={{ color: `${tertiaryColor}80` }}>Select your field and subfield</p>
-              </div>
-            </div>
+    <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-8 overflow-hidden" style={{ backgroundColor: secondaryColor }}>
+      <div className="w-full max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4" style={{ backgroundColor: `${primaryColor}15` }}>
+            <svg className="w-8 h-8" style={{ color: primaryColor }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
           </div>
+          <h1 className="text-3xl font-bold mb-2" style={{ color: tertiaryColor }}>
+            Practice Interview
+          </h1>
+          <p className="text-lg" style={{ color: `${tertiaryColor}80` }}>
+            Choose your technology focus area
+          </p>
+        </div>
 
-                  {/* Content */}
-          <div className="px-6 py-6 space-y-6">
-            {/* Field Dropdown */}
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold" style={{ color: tertiaryColor }}>
-                Select Field
-              </label>
-              <div className="relative">
-                <select
-                  value={selectedField}
-                  onChange={(e) => setSelectedField(e.target.value)}
-                  className="w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-all duration-300 appearance-none cursor-pointer"
-                  style={{ 
-                    borderColor: selectedField ? primaryColor : `${primaryColor}30`,
-                    backgroundColor: selectedField ? `${primaryColor}05` : secondaryColor
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.boxShadow = `0 0 0 4px ${primaryColor}20`;
-                    e.target.style.borderColor = primaryColor;
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.boxShadow = 'none';
-                    e.target.style.borderColor = selectedField ? primaryColor : `${primaryColor}30`;
-                  }}
+        {/* Offline Button */}
+        <div className="text-center mb-6">
+          <button
+            onClick={handleGoOffline}
+            className="px-6 py-3 rounded-xl font-medium transition-all duration-300 hover:scale-105 hover:shadow-lg border-2"
+            style={{ 
+              borderColor: `${primaryColor}30`,
+              backgroundColor: `${primaryColor}08`,
+              color: primaryColor
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = `${primaryColor}15`;
+              e.currentTarget.style.borderColor = primaryColor;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = `${primaryColor}08`;
+              e.currentTarget.style.borderColor = `${primaryColor}30`;
+            }}
+          >
+            <div className="flex items-center space-x-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+              <span>Go Offline - Load Sample Questions</span>
+            </div>
+          </button>
+        </div>
+
+        {/* Technology Grid */}
+        <div className="grid grid-cols-2 gap-4">
+          {techOptions.map((tech) => (
+            <button
+              key={tech.id}
+              onClick={() => handleTechClick(tech.id)}
+              disabled={isLoading}
+              className="p-4 rounded-xl border-2 transition-all duration-300 text-center group hover:scale-105 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ 
+                borderColor: `${primaryColor}20`,
+                backgroundColor: 'white'
+              }}
+            >
+              <div className="flex flex-col items-center space-y-3">
+                <div 
+                  className="w-16 h-16 rounded-lg flex items-center justify-center text-3xl flex-shrink-0"
+                  style={{ backgroundColor: tech.color }}
                 >
-                  <option value="">Choose a field...</option>
-                  {fieldsData.map((field) => (
-                    <option key={field.id} value={field.id}>
-                      {field.name}
-                    </option>
-                  ))}
-                </select>
-                <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
-                  <svg className="w-5 h-5" style={{ color: primaryColor }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
+                  {tech.icon}
                 </div>
+                <h3 className="text-lg font-bold" style={{ color: tertiaryColor }}>
+                  {tech.name}
+                </h3>
+                {isLoading && (
+                  <div className="w-5 h-5 border-2 border-gray-300 border-t-transparent rounded-full animate-spin"></div>
+                )}
               </div>
-            </div>
-
-            {/* Subfield Dropdown */}
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold" style={{ color: tertiaryColor }}>
-                Select Subfield
-              </label>
-              <div className="relative">
-                <select
-                  value={selectedSubfield}
-                  onChange={(e) => setSelectedSubfield(e.target.value)}
-                  disabled={!selectedField}
-                  className="w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-all duration-300 appearance-none cursor-pointer disabled:cursor-not-allowed"
-                  style={{ 
-                    borderColor: selectedField ? (selectedSubfield ? primaryColor : `${primaryColor}30`) : '#d1d5db',
-                    backgroundColor: selectedField ? (selectedSubfield ? `${primaryColor}05` : secondaryColor) : '#f9fafb'
-                  }}
-                  onFocus={(e) => {
-                    if (selectedField) {
-                      e.target.style.boxShadow = `0 0 0 4px ${primaryColor}20`;
-                      e.target.style.borderColor = primaryColor;
-                    }
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.boxShadow = 'none';
-                    e.target.style.borderColor = selectedField ? (selectedSubfield ? primaryColor : `${primaryColor}30`) : '#d1d5db';
-                  }}
-                >
-                  <option value="">Choose a subfield...</option>
-                  {availableSubfields.map((subfield) => (
-                    <option key={subfield.id} value={subfield.id}>
-                      {subfield.name}
-                    </option>
-                  ))}
-                </select>
-                <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
-                  <svg className="w-5 h-5" style={{ color: selectedField ? primaryColor : '#9ca3af' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-
-            {/* Description */}
-            {selectedSubfield && (
-              <div className="p-4 rounded-xl" style={{ backgroundColor: `${primaryColor}08`, border: `1px solid ${primaryColor}20` }}>
-                <div className="flex items-start space-x-3">
-                  <div className="w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center" style={{ backgroundColor: primaryColor }}>
-                    <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium" style={{ color: primaryColor }}>
-                      {availableSubfields.find(s => s.id === selectedSubfield)?.description}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Custom Input Field */}
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold" style={{ color: tertiaryColor }}>
-                Additional Notes (Optional)
-              </label>
-              <textarea
-                value={customInput}
-                onChange={(e) => setCustomInput(e.target.value)}
-                placeholder="Enter any specific topics, skills, or areas you want to focus on..."
-                rows={3}
-                className="w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-all duration-300 resize-none"
-                style={{ 
-                  borderColor: customInput ? primaryColor : `${primaryColor}30`,
-                  backgroundColor: customInput ? `${primaryColor}05` : secondaryColor
-                }}
-                onFocus={(e) => {
-                  e.target.style.boxShadow = `0 0 0 4px ${primaryColor}20`;
-                  e.target.style.borderColor = primaryColor;
-                  e.target.style.backgroundColor = 'white';
-                }}
-                onBlur={(e) => {
-                  e.target.style.boxShadow = 'none';
-                  e.target.style.borderColor = customInput ? primaryColor : `${primaryColor}30`;
-                  e.target.style.backgroundColor = customInput ? `${primaryColor}05` : secondaryColor;
-                }}
-              />
-            </div>
-
-            {/* Error Display */}
-            {error && (
-              <div className="p-4 rounded-xl border-2" style={{ 
-                backgroundColor: '#fef2f2',
-                borderColor: '#ef4444'
-              }}>
-                <div className="flex items-center space-x-3">
-                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{ backgroundColor: '#ef4444' }}>
-                    !
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium" style={{ color: '#dc2626' }}>
-                      {error}
-                    </p>
-                    <p className="text-xs" style={{ color: '#dc2626' }}>
-                      Please check your internet connection and try again.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Action Button */}
-            <div className="pt-6">
-              <button
-                onClick={handleStartPractice}
-                disabled={!selectedField || !selectedSubfield}
-                className="w-full px-6 py-3 rounded-xl transition-all duration-300 font-medium disabled:cursor-not-allowed"
-                style={{ 
-                  backgroundColor: (!selectedField || !selectedSubfield) ? '#9ca3af' : primaryColor,
-                  color: 'white'
-                }}
-                onMouseEnter={(e) => {
-                  if (selectedField && selectedSubfield) {
-                    e.currentTarget.style.backgroundColor = `${primaryColor}e6`;
-                    e.currentTarget.style.transform = 'translateY(-1px)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (selectedField && selectedSubfield) {
-                    e.currentTarget.style.backgroundColor = primaryColor;
-                    e.currentTarget.style.transform = 'translateY(0)';
-                  }
-                }}
-              >
-                Start Practice
-              </button>
-            </div>
-
-
-          </div>
+            </button>
+          ))}
         </div>
       </div>
     </div>
