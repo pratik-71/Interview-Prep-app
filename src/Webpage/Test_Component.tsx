@@ -22,6 +22,7 @@ const Test_Component: React.FC = () => {
   const [audioResult, setAudioResult] = useState<AudioAnswerEvaluation | null>(null)
   const [testResult, setTestResult] = useState<AnswerEvaluation | null>(null)
   const [isEvaluatingText, setIsEvaluatingText] = useState(false)
+  const [Marks,setMarks] = useState<number[]>([])
   
   // Refs for auto-scrolling to results
   const textResultRef = useRef<HTMLDivElement>(null)
@@ -64,6 +65,11 @@ const Test_Component: React.FC = () => {
         setIsAudioResult(false)
         setHasResponseArrived(true)
         
+        // Store marks for current question
+        if (evaluation.marks !== undefined) {
+          Marks[currentQuestionIndex] = evaluation.marks
+        }
+        
         console.log('Text answer evaluated:', evaluation)
       }
     } catch (error) {
@@ -76,14 +82,16 @@ const Test_Component: React.FC = () => {
 
   const handleSubmitAudio = async () => {
     try {
-      // This will be called when audio is submitted from the recording modal
-      // The actual audio evaluation will happen in the Record_Answer component
-      console.log('Audio answer submitted for evaluation')
+      
       setHasResponseArrived(true)
     } catch (error) {
       console.error('Error handling audio submission:', error)
     }
   }
+
+
+
+
 
   // Check if we have questions and if current index is valid
   if (!allQuestions || !Array.isArray(allQuestions) || allQuestions.length === 0) {
@@ -116,8 +124,12 @@ const Test_Component: React.FC = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a10 10 0 100-20 10 10 0 000 20z" />
             </svg>
           </div>
+
+          <h2 className='text-2xl font-bold mb-4' style={{ color: tertiaryColor }}>{Marks.reduce((acc, curr) => acc + curr, 0)}/80</h2>
           <h2 className="text-2xl font-bold mb-4" style={{ color: tertiaryColor }}>Test Completed!</h2>
           <p className="text-lg mb-6" style={{ color: `${tertiaryColor}80` }}>You've answered all the questions</p>
+
+
           <button 
             onClick={() => setCurrentQuestionIndex(0)}
             className="px-6 py-3 rounded-lg text-white font-medium transition-all duration-300 hover:scale-105 shadow-lg"
@@ -125,6 +137,30 @@ const Test_Component: React.FC = () => {
           >
             Restart Test
           </button>
+
+          <select 
+          value={difficulty} 
+          onChange={(e) => setDifficulty(e.target.value)} 
+          className="py-2 px-4 rounded-lg border-2 focus:outline-none cursor-pointer bg-white"
+          style={{ 
+            borderColor: `${primaryColor}30`,
+            color: tertiaryColor
+          }}
+          onFocus={(e) => {
+            e.target.style.boxShadow = `0 0 0 4px ${primaryColor}20`;
+            e.target.style.borderColor = primaryColor;
+            e.target.style.backgroundColor = `${primaryColor}05`;
+          }}
+          onBlur={(e) => {
+            e.target.style.boxShadow = 'none';
+            e.target.style.borderColor = `${primaryColor}30`;
+            e.target.style.backgroundColor = 'white';
+          }}
+        >
+          <option value="beginner" style={{ color: tertiaryColor }}>Beginner</option>
+          <option value="intermediate" style={{ color: tertiaryColor }}>Intermediate</option>
+          <option value="expert" style={{ color: tertiaryColor }}>Expert</option>
+        </select>
         </div>
       </div>
     )
@@ -133,31 +169,32 @@ const Test_Component: React.FC = () => {
   const progressPercentage = ((currentQuestionIndex + 1) / filteredQuestions.length) * 100
 
   return (
-    <div className="h-screen p-4 sm:p-6 md:p-8 pb-20 sm:pb-24 md:pb-28 overflow-y-auto custom-scrollbar" style={{ backgroundColor: secondaryColor }}>
+    <div className="h-screen p-4 sm:p-6 md:p-8 overflow-y-auto custom-scrollbar" style={{ backgroundColor: secondaryColor }}>
       {/* Header Section */}
        
-       <div className='flex justify-between mb-4'>
-        <button 
-          onClick={() => navigate('/practice/questions')}
-          className='py-2 px-4 rounded-lg text-white transition-all duration-300 hover:scale-105' 
-          style={{ backgroundColor: primaryColor }}
-        > 
-          Back 
-        </button>
-        
+       <div className='flex justify-end mb-4'>
         <select 
           value={difficulty} 
           onChange={(e) => setDifficulty(e.target.value)} 
-          className="py-2 px-4 rounded-lg border-2 focus:outline-none"
+          className="py-2 px-4 rounded-lg border-2 focus:outline-none cursor-pointer bg-white"
           style={{ 
-            backgroundColor: 'white',
             borderColor: `${primaryColor}30`,
             color: tertiaryColor
           }}
+          onFocus={(e) => {
+            e.target.style.boxShadow = `0 0 0 4px ${primaryColor}20`;
+            e.target.style.borderColor = primaryColor;
+            e.target.style.backgroundColor = `${primaryColor}05`;
+          }}
+          onBlur={(e) => {
+            e.target.style.boxShadow = 'none';
+            e.target.style.borderColor = `${primaryColor}30`;
+            e.target.style.backgroundColor = 'white';
+          }}
         >
-          <option value="beginner">Beginner</option>
-          <option value="intermediate">Intermediate</option>
-          <option value="expert">Expert</option>
+          <option value="beginner" style={{ color: tertiaryColor }}>Beginner</option>
+          <option value="intermediate" style={{ color: tertiaryColor }}>Intermediate</option>
+          <option value="expert" style={{ color: tertiaryColor }}>Expert</option>
         </select>
         
        </div>
@@ -263,6 +300,9 @@ const Test_Component: React.FC = () => {
               onClick={() => {
                 setCurrentQuestionIndex(currentQuestionIndex + 1)
                 setAnswer('')
+                if (testResult?.marks !== undefined) {
+                  Marks[currentQuestionIndex] = testResult.marks
+                }
               }}
               disabled={currentQuestionIndex === allQuestions.length - 1}
               className="flex-1 px-4 py-2 rounded-xl font-semibold text-lg transition-all duration-300 hover:scale-105 border-2 shadow-lg"
@@ -441,6 +481,8 @@ const Test_Component: React.FC = () => {
                  </div>
                </>
              )}
+
+
     </div>
     
   )
@@ -460,6 +502,7 @@ const RecordAnswer = ({setAnswer, setShowRecordingModal, handleSubmitAudio, curr
   const [isEvaluating, setIsEvaluating] = useState(false)
   const [permissionStatus, setPermissionStatus] = useState<'granted' | 'denied' | 'prompt' | 'checking'>('checking')
   const [isMobile, setIsMobile] = useState(false)
+  const [Marks,setMarks] = useState<number[]>([])
 
   // Check if device is mobile and get permissions
   useEffect(() => {

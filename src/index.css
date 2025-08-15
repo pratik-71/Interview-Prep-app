@@ -83,3 +83,42 @@ code {
 .flex-1 {
   flex: 1 1 0%;
 }
+
+/* Modern dropdown styling */
+select {
+  background-color: white;
+  border-radius: 0.75rem;
+  border: 2px solid;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  line-height: 1.5rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+select:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(0, 178, 214, 0.1);
+}
+
+select:disabled {
+  background-color: #f9fafb;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Custom dropdown arrow styling */
+select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.75rem center;
+  background-repeat: no-repeat;
+  background-size: 1.25em 1.25em;
+  padding-right: 2.5rem;
+}
+
+/* Hover effect for dropdowns */
+select:hover:not(:disabled) {
+  border-color: #00b2d6;
+}
+
+
