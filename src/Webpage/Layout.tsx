@@ -1,83 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useThemeStore } from '../zustand_store/theme_store';
-import UpdateNotification from '../components/UpdateNotification';
 import VersionService from '../services/versionService';
-import { gsap } from 'gsap';
+import UpdateNotification from '../components/UpdateNotification';
 
-interface LayoutProps {
-  children: React.ReactNode;
-}
-
-const Layout: React.FC<LayoutProps> = ({ children }) => {
+const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { primaryColor,  tertiaryColor } = useThemeStore();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { primaryColor,tertiaryColor } = useThemeStore();
   
-  // Refs for GSAP animations
+  // Refs for DOM elements
   const sidebarRef = useRef<HTMLDivElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
   const hamburgerRef = useRef<HTMLButtonElement>(null);
 
-  const isActiveRoute = (path: string) => {
-    if (path === '/') {
-      return location.pathname === '/';
-    }
-    return location.pathname.startsWith(path);
-  };
-
-  const handleNavigation = (path: string) => {
-    navigate(path);
-    
-    // Simple close animation
-    gsap.to(sidebarRef.current, {
-      x: -256,
-      duration: 0.2,
-      ease: "power1.in",
-      onComplete: () => setSidebarOpen(false)
-    });
-    
-    gsap.to(backdropRef.current, {
-      opacity: 0,
-      duration: 0.15
-    });
-  };
-
-  const toggleSidebar = () => {
-    if (!sidebarOpen) {
-      // Opening sidebar
-      setSidebarOpen(true);
-      
-      // Simple slide in animation
-      gsap.to(sidebarRef.current, {
-        x: 0,
-        duration: 0.25,
-        ease: "power1.out"
-      });
-      
-      // Simple backdrop fade
-      gsap.to(backdropRef.current, {
-        opacity: 1,
-        duration: 0.2
-      });
-    } else {
-      // Closing sidebar
-      gsap.to(sidebarRef.current, {
-        x: -256,
-        duration: 0.2,
-        ease: "power1.in",
-        onComplete: () => setSidebarOpen(false)
-      });
-      
-      gsap.to(backdropRef.current, {
-        opacity: 0,
-        duration: 0.15
-      });
-    }
-  };
-
-  // Initialize version service and start update checking
+  // Initialize VersionService
   useEffect(() => {
     const versionService = VersionService.getInstance();
     versionService.startUpdateChecking(5); // Check every 5 minutes
@@ -87,12 +25,25 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     };
   }, []);
 
-  // Initialize sidebar position
-  useEffect(() => {
-    if (sidebarRef.current) {
-      gsap.set(sidebarRef.current, { x: -256 });
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
+  const handleNavigation = (path: string) => {
+    navigate(path);
+    setSidebarOpen(false);
+  };
+
+  const closeSidebar = () => {
+    setSidebarOpen(false);
+  };
+
+  const isActiveRoute = (path: string) => {
+    if (path === '/') {
+      return location.pathname === '/';
     }
-  }, []);
+    return location.pathname.startsWith(path);
+  };
 
   return (
     <div className="flex flex-col h-screen">
@@ -122,7 +73,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         {/* Right: Profile Photo */}
         <div className="flex items-center space-x-3">
           <button 
-            onClick={() => navigate('/profile')}
+            onClick={() => navigate('/dashboard')}
             className="p-1 rounded-full hover:bg-gray-100 transition-colors duration-200"
           >
             <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center hover:bg-gray-400 transition-colors duration-200">
@@ -138,28 +89,18 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       {sidebarOpen && (
         <>
                      {/* Backdrop */}
-           <div 
+           <div
              ref={backdropRef}
-             className="fixed inset-0 bg-black bg-opacity-50 z-40"
-             onClick={() => {
-               gsap.to(sidebarRef.current, {
-                 x: -256,
-                 duration: 0.2,
-                 ease: "power1.in",
-                 onComplete: () => setSidebarOpen(false)
-               });
-               
-               gsap.to(backdropRef.current, {
-                 opacity: 0,
-                 duration: 0.15
-               });
-             }}
+             className="fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-300 ease-in-out"
+             onClick={closeSidebar}
            />
           
           {/* Sidebar */}
-          <div 
+          <div
             ref={sidebarRef}
-            className="fixed left-0 top-0 h-full w-64 bg-white shadow-xl z-50"
+            className={`fixed left-0 top-0 h-full w-64 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${
+              sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+            }`}
           >
             <div className="p-6">
               {/* Sidebar Header */}
@@ -168,19 +109,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   Menu
                 </h2>
                                  <button
-                   onClick={() => {
-                     gsap.to(sidebarRef.current, {
-                       x: -256,
-                       duration: 0.2,
-                       ease: "power1.in",
-                       onComplete: () => setSidebarOpen(false)
-                     });
-                     
-                     gsap.to(backdropRef.current, {
-                       opacity: 0,
-                       duration: 0.15
-                     });
-                   }}
+                   onClick={closeSidebar}
                    className="p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200"
                  >
                   <svg className="w-5 h-5" style={{ color: tertiaryColor }} fill="none" stroke="currentColor" viewBox="0 0 24 24">

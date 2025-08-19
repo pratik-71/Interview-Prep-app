@@ -1,9 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useThemeStore } from '../zustand_store/theme_store';
 import { useQuestionsStore } from '../zustand_store/questions_store';
 import { sampleQuestions } from '../data/sampleQuestions';
-import { gsap } from 'gsap';
 
 const QuestionsDisplay: React.FC = () => {
   const { questions, setQuestions } = useQuestionsStore();
@@ -11,89 +10,12 @@ const QuestionsDisplay: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<'beginner' | 'intermediate' | 'expert'>('beginner');
   const navigate = useNavigate();
   const { primaryColor, secondaryColor, tertiaryColor } = useThemeStore();
-  
-  // Refs for GSAP animations
-  const questionRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
-  const answerRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
-
-  // Initialize GSAP animations and cleanup
-  useEffect(() => {
-    // Set initial states for all answer sections
-    Object.keys(answerRefs.current).forEach((questionId) => {
-      const answerElement = answerRefs.current[questionId];
-      if (answerElement) {
-        gsap.set(answerElement, {
-          height: 0,
-          opacity: 0
-        });
-      }
-    });
-
-    // Cleanup function
-    return () => {
-      // Kill all GSAP animations when component unmounts
-      Object.keys(answerRefs.current).forEach((questionId) => {
-        const answerElement = answerRefs.current[questionId];
-        if (answerElement) {
-          gsap.killTweensOf(answerElement);
-        }
-      });
-    };
-  }, [questions]);
-
-  // Reset refs when questions change
-  useEffect(() => {
-    questionRefs.current = {};
-    answerRefs.current = {};
-  }, [questions]);
 
   const toggleQuestionExpansion = (questionId: string) => {
     if (openQuestionId === questionId) {
-      // Collapse
-      const answerElement = answerRefs.current[questionId];
-      if (answerElement) {
-        gsap.to(answerElement, {
-          height: 0,
-          opacity: 0,
-          duration: 0.15,
-          ease: "power1.in",
-          onComplete: () => {
-            setOpenQuestionId(null);
-          }
-        });
-      }
+      setOpenQuestionId(null);
     } else {
-      // Expand
-      if (openQuestionId) {
-        // Close previously open question
-        const prevAnswerElement = answerRefs.current[openQuestionId];
-        if (prevAnswerElement) {
-          gsap.to(prevAnswerElement, {
-            height: 0,
-            opacity: 0,
-            duration: 0.1,
-            ease: "power1.in"
-          });
-        }
-      }
-      
       setOpenQuestionId(questionId);
-      
-      // Animate the new answer in
-      setTimeout(() => {
-        const answerElement = answerRefs.current[questionId];
-        if (answerElement) {
-          gsap.fromTo(answerElement, 
-            { height: 0, opacity: 0 },
-            { 
-              height: "auto", 
-              opacity: 1, 
-              duration: 0.2, 
-              ease: "power1.out" 
-            }
-          );
-        }
-      }, 25);
     }
   };
 
@@ -178,7 +100,6 @@ const QuestionsDisplay: React.FC = () => {
     return (
       <div
         key={question.id}
-        ref={(el) => { questionRefs.current[question.id] = el; }}
         className='p-3 sm:p-4 md:p-5 lg:p-6 rounded-lg sm:rounded-xl border-2 shadow-md sm:shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer'
         style={{
           borderColor: borderColor,
@@ -219,19 +140,18 @@ const QuestionsDisplay: React.FC = () => {
           </div>
         </div>
 
-        {/* Answer Section with GSAP Animation */}
+        {/* Answer Section with CSS Transitions */}
         <div 
-          ref={(el) => { answerRefs.current[question.id] = el; }}
-          className='overflow-hidden'
+          className='overflow-hidden transition-all duration-300 ease-in-out'
           style={{ 
-            height: isExpanded ? 'auto' : '0px',
-            opacity: isExpanded ? 1 : 0
+            maxHeight: isExpanded ? '1000px' : '0px',
+            opacity: isExpanded ? 1 : 0,
+            transform: isExpanded ? 'translateY(0)' : 'translateY(-10px)'
           }}
         >
           <div className='mt-4 pt-4 border-t' style={{ borderColor: `${primaryColor}20` }}>
             <div className='space-y-4'>
               <div>
-                
                 <div className='p-4 rounded-lg' style={{ backgroundColor: `${primaryColor}05`, border: `1px solid ${primaryColor}20` }}>
                   <p className='text-sm sm:text-base md:text-lg leading-relaxed'
                     style={{ color: tertiaryColor }}>{question.answer}</p>

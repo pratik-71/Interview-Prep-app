@@ -127,7 +127,6 @@ export class VersionService {
 
   // Force app update/reload
   public forceUpdate(): void {
-    console.log('Forcing app update...');
     
     // Clear all caches
     if ('caches' in window) {
