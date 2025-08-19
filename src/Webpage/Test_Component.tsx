@@ -4,7 +4,7 @@ import { useQuestionsStore } from '../zustand_store/questions_store'
 import { AnswerEvaluation, AudioAnswerEvaluation, GeminiService } from '../services/geminiService'
 import { Device } from '@capacitor/device'
 
-const Test_Component: React.FC = () => {
+const TestComponent: React.FC = () => {
   const { questions } = useQuestionsStore();
   
   // Select 15 questions: 5 from each difficulty level
@@ -446,7 +446,7 @@ const Test_Component: React.FC = () => {
   )
 }
 
-export default Test_Component
+export default TestComponent
 
 const RecordAnswer = ({setAnswer, setShowRecordingModal, handleSubmitAudio, currentQuestion, setAudioResult, setIsAudioResult}: {setAnswer: (answer: string) => void, setShowRecordingModal: (show: boolean) => void, handleSubmitAudio: () => void, currentQuestion: string, setAudioResult: (result: AudioAnswerEvaluation | null) => void, setIsAudioResult: (isAudio: boolean) => void}) => {
   const { primaryColor, tertiaryColor } = useThemeStore()

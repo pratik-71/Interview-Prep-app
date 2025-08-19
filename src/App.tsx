@@ -8,6 +8,7 @@ import Register from './components/auth/Register';
 import Dashboard from './components/dashboard/Dashboard';
 import PracticeInterview from './Webpage/PracticeInterview';
 import QuestionsDisplay from './Webpage/QuestionsDisplay';
+import TestComponent from './Webpage/Test_Component';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import NotFound from './components/common/NotFound';
 
@@ -62,6 +63,16 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <QuestionsDisplay />
+                </Layout>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/test" 
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <TestComponent />
                 </Layout>
               </ProtectedRoute>
             } 
