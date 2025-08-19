@@ -3,9 +3,11 @@ import { useThemeStore } from '../zustand_store/theme_store'
 import { useQuestionsStore } from '../zustand_store/questions_store'
 import { AnswerEvaluation, AudioAnswerEvaluation, GeminiService } from '../services/geminiService'
 import { Device } from '@capacitor/device'
+import { useNavigate } from 'react-router-dom'
 
 const TestComponent: React.FC = () => {
   const { questions } = useQuestionsStore();
+  const navigate = useNavigate();
   
   // Select 15 questions: 5 from each difficulty level
   const getSelectedQuestions = () => {
@@ -41,6 +43,12 @@ const TestComponent: React.FC = () => {
   const [audioResult, setAudioResult] = useState<AudioAnswerEvaluation | null>(null)
   const [testResult, setTestResult] = useState<AnswerEvaluation | null>(null)
   const [isEvaluatingText, setIsEvaluatingText] = useState(false)
+  const [showExitModal, setShowExitModal] = useState(false)
+  
+  // Add marks tracking state
+  const [questionMarks, setQuestionMarks] = useState<{ [key: number]: number }>({})
+  const [questionResults, setQuestionResults] = useState<{ [key: number]: AnswerEvaluation | AudioAnswerEvaluation }>({})
+  const [showFinalResults, setShowFinalResults] = useState(false)
   
   // Refs for auto-scrolling to results
   const textResultRef = useRef<HTMLDivElement>(null)
@@ -66,6 +74,83 @@ const TestComponent: React.FC = () => {
     }
   }, [hasResponseArrived, isAudioResult])
 
+  const handleBackClick = () => {
+    setShowExitModal(true)
+  }
+
+  const handleConfirmExit = () => {
+    if (window.history.length > 1) {
+      navigate(-1)
+    } else {
+      navigate('/practice')
+    }
+    setShowExitModal(false)
+  }
+
+  const handleCancelExit = () => {
+    setShowExitModal(false)
+  }
+
+  // Add marks tracking functions
+  const updateQuestionMarks = (questionIndex: number, marks: number, result: AnswerEvaluation | AudioAnswerEvaluation) => {
+    setQuestionMarks(prev => ({ ...prev, [questionIndex]: marks }))
+    setQuestionResults(prev => ({ ...prev, [questionIndex]: result }))
+  }
+
+  const calculateFinalResults = () => {
+    const answeredQuestions = Object.keys(questionMarks).length
+    if (answeredQuestions === 0) return null
+
+    const totalMarks = Object.values(questionMarks).reduce((sum, marks) => sum + marks, 0)
+    const maxPossibleMarks = answeredQuestions * 10 // Assuming 10 is max per question
+    const averageMarks = totalMarks / answeredQuestions
+    const percentage = (totalMarks / maxPossibleMarks) * 100
+
+    // Calculate breakdown by difficulty
+    const difficultyBreakdown = {
+      beginner: { count: 0, totalMarks: 0, average: 0 },
+      intermediate: { count: 0, totalMarks: 0, average: 0 },
+      expert: { count: 0, totalMarks: 0, average: 0 }
+    }
+
+    Object.entries(questionResults).forEach(([index, result]) => {
+      const questionIndex = parseInt(index)
+      const question = allQuestions[questionIndex]
+      const difficulty = question.category as keyof typeof difficultyBreakdown
+      const marks = questionMarks[questionIndex]
+
+      if (difficultyBreakdown[difficulty]) {
+        difficultyBreakdown[difficulty].count++
+        difficultyBreakdown[difficulty].totalMarks += marks
+      }
+    })
+
+    // Calculate averages for each difficulty
+    Object.keys(difficultyBreakdown).forEach(difficulty => {
+      const key = difficulty as keyof typeof difficultyBreakdown
+      if (difficultyBreakdown[key].count > 0) {
+        difficultyBreakdown[key].average = difficultyBreakdown[key].totalMarks / difficultyBreakdown[key].count
+      }
+    })
+
+    return {
+      totalMarks,
+      maxPossibleMarks,
+      averageMarks,
+      percentage,
+      answeredQuestions,
+      totalQuestions: allQuestions.length,
+      difficultyBreakdown
+    }
+  }
+
+  const handleTestCompletion = () => {
+    const results = calculateFinalResults()
+    if (results) {
+      setShowFinalResults(true)
+    }
+  }
+
   const handleSubmitText = async () => {
     try {
       if (answer.trim()) {
@@ -83,6 +168,17 @@ const TestComponent: React.FC = () => {
         setIsAudioResult(false)
         setHasResponseArrived(true)
         
+        // Track marks for this question
+        updateQuestionMarks(currentQuestionIndex, evaluation.marks, evaluation)
+        
+        // Check if this was the last question
+        if (currentQuestionIndex === allQuestions.length - 1) {
+          // Small delay to show the result before final summary
+          setTimeout(() => {
+            handleTestCompletion()
+          }, 2000)
+        }
+        
         console.log('Text answer evaluated:', evaluation)
       }
     } catch (error) {
@@ -95,8 +191,17 @@ const TestComponent: React.FC = () => {
 
   const handleSubmitAudio = async () => {
     try {
-      
+      // Audio evaluation is handled in the RecordAnswer component
+      // This function is called after audio evaluation is complete
       setHasResponseArrived(true)
+      
+      // Check if this was the last question
+      if (currentQuestionIndex === allQuestions.length - 1) {
+        // Small delay to show the result before final summary
+        setTimeout(() => {
+          handleTestCompletion()
+        }, 2000)
+      }
     } catch (error) {
       console.error('Error handling audio submission:', error)
     }
@@ -155,12 +260,36 @@ const TestComponent: React.FC = () => {
         {/* Progress Bar */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-3">
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold" style={{ color: tertiaryColor }}>
-              Interview Test
-            </h1>
-            <span className="text-lg font-semibold" style={{ color: primaryColor }}>
-              {currentQuestionIndex + 1} / {allQuestions.length}
-            </span>
+            {/* Left: Back Button */}
+            <div className="flex-shrink-0">
+              <button
+                type="button"
+                onClick={handleBackClick}
+                className="inline-flex items-center px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors hover:shadow-sm"
+                style={{ borderColor: `${primaryColor}40`, color: primaryColor }}
+                aria-label="Go back"
+                title="Go back"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: primaryColor }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                <span className="ml-2">Back</span>
+              </button>
+            </div>
+
+            {/* Center: Title */}
+            <div className="flex-1 flex justify-center">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold" style={{ color: tertiaryColor }}>
+                Interview Test
+              </h1>
+            </div>
+
+            {/* Right: Page Indicator */}
+            <div className="flex-shrink-0">
+              <span className="text-lg font-semibold" style={{ color: primaryColor }}>
+                {currentQuestionIndex + 1} / {allQuestions.length}
+              </span>
+            </div>
           </div>
           
           {/* Progress Bar */}
@@ -273,6 +402,20 @@ const TestComponent: React.FC = () => {
               Next
             </button>
            </div>
+
+           {/* Finish Test Button */}
+           <button 
+             onClick={handleTestCompletion}
+             disabled={Object.keys(questionMarks).length === 0}
+             className="w-full px-4 py-2 rounded-xl font-semibold text-lg transition-all duration-300 hover:scale-105 border-2 shadow-lg mt-4"
+             style={{ 
+               borderColor: Object.keys(questionMarks).length > 0 ? primaryColor : `${primaryColor}30`,
+               color: Object.keys(questionMarks).length > 0 ? primaryColor : `${primaryColor}50`,
+               backgroundColor: 'transparent'
+             }}
+           >
+             Finish Test
+           </button>
           </div>
         </div>
 
@@ -435,12 +578,298 @@ const TestComponent: React.FC = () => {
                      currentQuestion={allQuestions[currentQuestionIndex]?.question || 'Interview question'}
                      setAudioResult={setAudioResult}
                      setIsAudioResult={setIsAudioResult}
+                     currentQuestionIndex={currentQuestionIndex}
+                     updateQuestionMarks={updateQuestionMarks}
                    />
                  </div>
                </>
              )}
 
+      {/* Final Results Modal */}
+      {showFinalResults && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-8">
+              {/* Header */}
+              <div className="text-center mb-8">
+                <div className="mx-auto flex items-center justify-center w-20 h-20 rounded-full mb-4" style={{ backgroundColor: `${primaryColor}15` }}>
+                  <svg className="w-10 h-10" style={{ color: primaryColor }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h2 className="text-3xl font-bold mb-2" style={{ color: tertiaryColor }}>
+                  Test Results
+                </h2>
+                <p className="text-lg" style={{ color: `${tertiaryColor}80` }}>
+                  Here's how you performed in your interview test
+                </p>
+              </div>
 
+              {/* Results Summary */}
+              {(() => {
+                const results = calculateFinalResults()
+                if (!results) return null
+
+                return (
+                  <div className="space-y-6">
+                    {/* Overall Score */}
+                    <div className="text-center p-6 rounded-2xl" style={{ backgroundColor: `${primaryColor}08` }}>
+                      <div className="text-4xl font-bold mb-2" style={{ color: primaryColor }}>
+                        {results.totalMarks}/{results.maxPossibleMarks}
+                      </div>
+                      <div className="text-xl font-semibold mb-2" style={{ color: tertiaryColor }}>
+                        {results.percentage.toFixed(1)}%
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-3">
+                        <div 
+                          className="h-3 rounded-full transition-all duration-1000"
+                          style={{ 
+                            width: `${results.percentage}%`,
+                            backgroundColor: primaryColor
+                          }}
+                        />
+                      </div>
+                      <div className="text-sm mt-2" style={{ color: `${tertiaryColor}70` }}>
+                        {results.answeredQuestions} out of {results.totalQuestions} questions answered
+                      </div>
+                    </div>
+
+                    {/* Difficulty Breakdown */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {Object.entries(results.difficultyBreakdown).map(([difficulty, stats]) => (
+                        stats.count > 0 && (
+                          <div key={difficulty} className="p-4 rounded-xl text-center" style={{ backgroundColor: `${primaryColor}05` }}>
+                            <div className="text-lg font-semibold mb-2 capitalize" style={{ color: tertiaryColor }}>
+                              {difficulty}
+                            </div>
+                            <div className="text-2xl font-bold mb-1" style={{ color: primaryColor }}>
+                              {stats.average.toFixed(1)}/10
+                            </div>
+                            <div className="text-sm" style={{ color: `${tertiaryColor}70` }}>
+                              {stats.count} question{stats.count !== 1 ? 's' : ''}
+                            </div>
+                          </div>
+                        )
+                      ))}
+                    </div>
+
+                    {/* Question-by-Question Results */}
+                    <div className="space-y-3">
+                      <h3 className="text-xl font-bold" style={{ color: tertiaryColor }}>
+                        Question Details
+                      </h3>
+                      <div className="grid grid-cols-1 gap-3">
+                        {allQuestions.map((question, index) => {
+                          const marks = questionMarks[index]
+                          const result = questionResults[index]
+                          const isAnswered = marks !== undefined
+                          
+                          return (
+                            <div key={index} className={`p-4 rounded-xl border-2 ${
+                              isAnswered ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'
+                            }`}>
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <span className="text-sm font-medium px-2 py-1 rounded-full text-white capitalize"
+                                          style={{ 
+                                            backgroundColor: question.category === 'beginner' ? '#10b981' : 
+                                                         question.category === 'intermediate' ? '#f59e0b' : '#ef4444'
+                                          }}>
+                                      {question.category}
+                                    </span>
+                                    <span className="text-sm" style={{ color: `${tertiaryColor}70` }}>
+                                      Question {index + 1}
+                                    </span>
+                                  </div>
+                                  <div className="text-sm" style={{ color: tertiaryColor }}>
+                                    {question.question.length > 100 ? question.question.substring(0, 100) + '...' : question.question}
+                                  </div>
+                                </div>
+                                <div className="text-right ml-4">
+                                  {isAnswered ? (
+                                    <div className="text-lg font-bold" style={{ color: primaryColor }}>
+                                      {marks}/10
+                                    </div>
+                                  ) : (
+                                    <div className="text-sm" style={{ color: `${tertiaryColor}50` }}>
+                                      Not answered
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Difficulty Level Summary */}
+                    <div className="space-y-3">
+                      <h3 className="text-xl font-bold" style={{ color: tertiaryColor }}>
+                        Difficulty Level Summary
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* Beginner Summary */}
+                        <div className="p-4 rounded-xl border-2" style={{ borderColor: '#10b981', backgroundColor: '#f0fdf4' }}>
+                          <div className="text-center">
+                            <div className="text-lg font-semibold mb-2 text-green-800">Beginner</div>
+                            <div className="text-2xl font-bold mb-1 text-green-600">
+                              {(() => {
+                                const beginnerStats = results.difficultyBreakdown.beginner
+                                return beginnerStats.count > 0 ? `${beginnerStats.totalMarks}/${beginnerStats.count * 10}` : '0/0'
+                              })()}
+                            </div>
+                            <div className="text-sm text-green-700">
+                              {(() => {
+                                const beginnerStats = results.difficultyBreakdown.beginner
+                                return beginnerStats.count > 0 ? `${beginnerStats.average.toFixed(1)}/10 avg` : 'No questions'
+                              })()}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Intermediate Summary */}
+                        <div className="p-4 rounded-xl border-2" style={{ borderColor: '#f59e0b', backgroundColor: '#fffbeb' }}>
+                          <div className="text-center">
+                            <div className="text-lg font-semibold mb-2 text-amber-800">Intermediate</div>
+                            <div className="text-2xl font-bold mb-1 text-amber-600">
+                              {(() => {
+                                const intermediateStats = results.difficultyBreakdown.intermediate
+                                return intermediateStats.count > 0 ? `${intermediateStats.totalMarks}/${intermediateStats.count * 10}` : '0/0'
+                              })()}
+                            </div>
+                            <div className="text-sm text-amber-700">
+                              {(() => {
+                                const intermediateStats = results.difficultyBreakdown.intermediate
+                                return intermediateStats.count > 0 ? `${intermediateStats.average.toFixed(1)}/10 avg` : 'No questions'
+                              })()}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Expert Summary */}
+                        <div className="p-4 rounded-xl border-2" style={{ borderColor: '#ef4444', backgroundColor: '#fef2f2' }}>
+                          <div className="text-center">
+                            <div className="text-lg font-semibold mb-2 text-red-800">Expert</div>
+                            <div className="text-2xl font-bold mb-1 text-red-600">
+                              {(() => {
+                                const expertStats = results.difficultyBreakdown.expert
+                                return expertStats.count > 0 ? `${expertStats.totalMarks}/${expertStats.count * 10}` : '0/0'
+                              })()}
+                            </div>
+                            <div className="text-sm text-red-700">
+                              {(() => {
+                                const expertStats = results.difficultyBreakdown.expert
+                                return expertStats.count > 0 ? `${expertStats.average.toFixed(1)}/10 avg` : 'No questions'
+                              })()}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })()}
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 mt-8">
+                <button
+                  onClick={() => {
+                    setShowFinalResults(false)
+                    setCurrentQuestionIndex(0)
+                    setQuestionMarks({})
+                    setQuestionResults({})
+                    setAnswer('')
+                    setTestResult(null)
+                    setAudioResult(null)
+                    setHasResponseArrived(false)
+                    setIsAudioResult(false)
+                  }}
+                  className="flex-1 px-6 py-3 rounded-xl font-medium text-white transition-all duration-300 hover:scale-105 shadow-lg"
+                  style={{ backgroundColor: primaryColor }}
+                >
+                  Take Test Again
+                </button>
+                <button
+                  onClick={() => {
+                    setShowFinalResults(false)
+                    navigate('/practice')
+                  }}
+                  className="flex-1 px-6 py-3 rounded-xl font-medium border-2 transition-all duration-300 hover:scale-105"
+                  style={{ 
+                    borderColor: primaryColor,
+                    color: primaryColor,
+                    backgroundColor: 'white'
+                  }}
+                >
+                  Back to Practice
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Exit Confirmation Modal */}
+      {showExitModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <div className="text-center">
+              {/* Warning Icon */}
+              <div className="mx-auto flex items-center justify-center w-16 h-16 rounded-full mb-4" style={{ backgroundColor: `${primaryColor}15` }}>
+                <svg className="w-8 h-8" style={{ color: primaryColor }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              
+              {/* Title */}
+              <h3 className="text-xl font-bold mb-2" style={{ color: tertiaryColor }}>
+                End Test?
+              </h3>
+              
+              {/* Message */}
+              <p className="text-gray-600 mb-6">
+                Are you sure you want to end this test? Your progress will be lost.
+              </p>
+              
+              {/* Buttons */}
+              <div className="flex space-x-3">
+                <button
+                  onClick={handleCancelExit}
+                  className="flex-1 px-4 py-2 rounded-lg border-2 font-medium transition-colors"
+                  style={{ 
+                    borderColor: `${primaryColor}40`,
+                    color: primaryColor,
+                    backgroundColor: 'white'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = `${primaryColor}08`
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'white'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmExit}
+                  className="flex-1 px-4 py-2 rounded-lg font-medium text-white transition-colors"
+                  style={{ backgroundColor: primaryColor }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.opacity = '0.9'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.opacity = '1'
+                  }}
+                >
+                  End Test
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
     
   )
@@ -448,7 +877,7 @@ const TestComponent: React.FC = () => {
 
 export default TestComponent
 
-const RecordAnswer = ({setAnswer, setShowRecordingModal, handleSubmitAudio, currentQuestion, setAudioResult, setIsAudioResult}: {setAnswer: (answer: string) => void, setShowRecordingModal: (show: boolean) => void, handleSubmitAudio: () => void, currentQuestion: string, setAudioResult: (result: AudioAnswerEvaluation | null) => void, setIsAudioResult: (isAudio: boolean) => void}) => {
+const RecordAnswer = ({setAnswer, setShowRecordingModal, handleSubmitAudio, currentQuestion, setAudioResult, setIsAudioResult, currentQuestionIndex, updateQuestionMarks}: {setAnswer: (answer: string) => void, setShowRecordingModal: (show: boolean) => void, handleSubmitAudio: () => void, currentQuestion: string, setAudioResult: (result: AudioAnswerEvaluation | null) => void, setIsAudioResult: (isAudio: boolean) => void, currentQuestionIndex: number, updateQuestionMarks: (questionIndex: number, marks: number, result: AnswerEvaluation | AudioAnswerEvaluation) => void}) => {
   const { primaryColor, tertiaryColor } = useThemeStore()
   const [isRecording, setIsRecording] = useState(false)
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
@@ -782,6 +1211,7 @@ const RecordAnswer = ({setAnswer, setShowRecordingModal, handleSubmitAudio, curr
                       setIsAudioResult(true)
                       setShowRecordingModal(false)
                       handleSubmitAudio()
+                      updateQuestionMarks(currentQuestionIndex, evaluation.marks, evaluation)
                     } catch (error) {
                       console.error('Error evaluating audio:', error)
                       alert('Failed to evaluate audio. Please try again.')
