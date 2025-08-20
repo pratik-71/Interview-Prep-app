@@ -4,10 +4,12 @@ import { useQuestionsStore } from '../zustand_store/questions_store'
 import { AnswerEvaluation, AudioAnswerEvaluation, GeminiService } from '../services/geminiService'
 import { Device } from '@capacitor/device'
 import { useNavigate } from 'react-router-dom'
+import { isMobilePlatform } from '../utils/mobileDetection'
 
 const TestComponent: React.FC = () => {
   const { questions } = useQuestionsStore();
   const navigate = useNavigate();
+  const [isMobile, setIsMobile] = useState(false);
   
   // Select 15 questions: 5 from each difficulty level
   const getSelectedQuestions = () => {
@@ -57,6 +59,11 @@ const TestComponent: React.FC = () => {
   // Get colors from theme store
   const { primaryColor, secondaryColor, tertiaryColor } = useThemeStore()
 
+  // Detect mobile platform
+  useEffect(() => {
+    setIsMobile(isMobilePlatform());
+  }, []);
+
   // Auto-scroll to results when they arrive
   useEffect(() => {
     if (hasResponseArrived) {
@@ -79,10 +86,21 @@ const TestComponent: React.FC = () => {
   }
 
   const handleConfirmExit = () => {
-    if (window.history.length > 1) {
-      navigate(-1)
-    } else {
+    // Mobile-friendly navigation - always go to practice instead of relying on history
+    if (isMobile) {
       navigate('/practice')
+    } else {
+      // On web, try to use history if available
+      try {
+        if (typeof window !== 'undefined' && window.history && window.history.length > 1) {
+          navigate(-1)
+        } else {
+          navigate('/practice')
+        }
+      } catch (error) {
+        // Fallback to practice page
+        navigate('/practice')
+      }
     }
     setShowExitModal(false)
   }

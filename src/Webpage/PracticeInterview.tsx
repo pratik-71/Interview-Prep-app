@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useThemeStore } from '../zustand_store/theme_store';
 import { useQuestionsStore } from '../zustand_store/questions_store';
 import GeminiService from '../services/geminiService';
 import LoadingQuestions from './LoadingQuestions';
 import { sampleQuestions } from '../data/sampleQuestions';
+import { isMobilePlatform } from '../utils/mobileDetection';
 
 interface TechOption {
   id: string;
@@ -16,10 +17,16 @@ interface TechOption {
 const PracticeInterview: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedTech, setSelectedTech] = useState<string>('');
+  const [isMobile, setIsMobile] = useState(false);
   
   const navigate = useNavigate();
   const { primaryColor, secondaryColor, tertiaryColor } = useThemeStore();
   const { setQuestions } = useQuestionsStore();
+
+  // Detect mobile platform
+  useEffect(() => {
+    setIsMobile(isMobilePlatform());
+  }, []);
 
   const techOptions: TechOption[] = [
     {
@@ -91,6 +98,21 @@ const PracticeInterview: React.FC = () => {
     navigate('/practice/questions');
   };
 
+  // Mobile-friendly event handlers
+  const handleTouchStart = (e: React.TouchEvent, techId: string) => {
+    if (isMobile) {
+      e.preventDefault();
+      handleTechClick(techId);
+    }
+  };
+
+  const handleTouchStartOffline = (e: React.TouchEvent) => {
+    if (isMobile) {
+      e.preventDefault();
+      handleGoOffline();
+    }
+  };
+
   // Show loading state
   if (isLoading) {
     return (
@@ -142,19 +164,12 @@ const PracticeInterview: React.FC = () => {
           <div className="text-center mb-6">
             <button
               onClick={handleGoOffline}
-              className="px-6 py-3 rounded-xl font-medium transition-all duration-300 hover:scale-105 hover:shadow-lg border-2"
+              onTouchStart={handleTouchStartOffline}
+              className="px-6 py-3 rounded-xl font-medium transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-lg border-2"
               style={{ 
                 borderColor: `${primaryColor}30`,
                 backgroundColor: `${primaryColor}08`,
                 color: primaryColor
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = `${primaryColor}15`;
-                e.currentTarget.style.borderColor = primaryColor;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = `${primaryColor}08`;
-                e.currentTarget.style.borderColor = `${primaryColor}30`;
               }}
             >
               <div className="flex items-center space-x-2">
@@ -172,8 +187,9 @@ const PracticeInterview: React.FC = () => {
               <button
                 key={tech.id}
                 onClick={() => handleTechClick(tech.id)}
+                onTouchStart={(e) => handleTouchStart(e, tech.id)}
                 disabled={isLoading}
-                className="p-4 rounded-xl border-2 transition-all duration-300 text-center group hover:scale-105 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-4 rounded-xl border-2 transition-all duration-300 text-center group hover:scale-105 active:scale-95 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ 
                   borderColor: `${primaryColor}20`,
                   backgroundColor: 'white'

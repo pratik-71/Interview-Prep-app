@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useThemeStore } from '../zustand_store/theme_store';
+import { isMobilePlatform } from '../utils/mobileDetection';
 
 interface LoadingQuestionsProps {
   field: string;
@@ -8,7 +9,21 @@ interface LoadingQuestionsProps {
 }
 
 const LoadingQuestions: React.FC<LoadingQuestionsProps> = ({ field, subfield, onCancel }) => {
+  const [isMobile, setIsMobile] = useState(false);
   const { primaryColor, secondaryColor, tertiaryColor } = useThemeStore();
+
+  // Detect mobile platform
+  useEffect(() => {
+    setIsMobile(isMobilePlatform());
+  }, []);
+
+  // Mobile-friendly event handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (isMobile) {
+      e.preventDefault();
+      onCancel();
+    }
+  };
 
   return (
     <div className="fixed inset-0 flex items-center justify-center p-4 z-50" style={{ backgroundColor: `${tertiaryColor}cc` }}>
@@ -100,19 +115,12 @@ const LoadingQuestions: React.FC<LoadingQuestionsProps> = ({ field, subfield, on
             {/* Cancel Button */}
             <button
               onClick={onCancel}
-              className="mt-6 px-6 py-2 border-2 rounded-lg transition-all duration-200 font-medium"
+              onTouchStart={handleTouchStart}
+              className="mt-6 px-6 py-2 border-2 rounded-lg transition-all duration-200 font-medium active:scale-95"
               style={{ 
                 borderColor: `${primaryColor}30`,
                 color: tertiaryColor,
                 backgroundColor: secondaryColor
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = `${primaryColor}08`;
-                e.currentTarget.style.borderColor = primaryColor;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = secondaryColor;
-                e.currentTarget.style.borderColor = `${primaryColor}30`;
               }}
             >
               Cancel Generation

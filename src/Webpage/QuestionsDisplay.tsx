@@ -1,15 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useThemeStore } from '../zustand_store/theme_store';
 import { useQuestionsStore } from '../zustand_store/questions_store';
 import { sampleQuestions } from '../data/sampleQuestions';
+import { isMobilePlatform } from '../utils/mobileDetection';
 
 const QuestionsDisplay: React.FC = () => {
   const { questions, setQuestions } = useQuestionsStore();
   const [openQuestionId, setOpenQuestionId] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<'beginner' | 'intermediate' | 'expert'>('beginner');
+  const [isMobile, setIsMobile] = useState(false);
   const navigate = useNavigate();
   const { primaryColor, secondaryColor, tertiaryColor } = useThemeStore();
+
+  // Detect mobile platform
+  useEffect(() => {
+    setIsMobile(isMobilePlatform());
+  }, []);
 
   const toggleQuestionExpansion = (questionId: string) => {
     if (openQuestionId === questionId) {
@@ -29,6 +36,21 @@ const QuestionsDisplay: React.FC = () => {
     }
   };
 
+  // Mobile-friendly event handlers
+  const handleTouchStart = (e: React.TouchEvent, questionId: string) => {
+    if (isMobile) {
+      e.preventDefault();
+      toggleQuestionExpansion(questionId);
+    }
+  };
+
+  const handleTouchStartCategory = (e: React.TouchEvent, category: 'beginner' | 'intermediate' | 'expert') => {
+    if (isMobile) {
+      e.preventDefault();
+      handleCategoryClick(category);
+    }
+  };
+
   const renderHeader = () => (
     <div className='flex items-center justify-between mb-1 sm:mb-2 md:mb-2 px-2 pt-2'>
       <h2 className='text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold'
@@ -36,7 +58,7 @@ const QuestionsDisplay: React.FC = () => {
         Interview Questions
       </h2>
       <button
-        className="rounded-lg px-4 py-2 text-white transition-all duration-300 hover:scale-105"
+        className="rounded-lg px-4 py-2 text-white transition-all duration-300 hover:scale-105 active:scale-95"
         style={{ backgroundColor: primaryColor }}
         onClick={handleStartTest}
         disabled={!questions}
@@ -63,13 +85,14 @@ const QuestionsDisplay: React.FC = () => {
           return (
             <div
               key={category}
-              className={`flex items-center justify-center space-x-2 sm:space-x-3 px-2 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-3 md:py-4 rounded-lg sm:rounded-xl font-medium sm:font-semibold shadow-md sm:shadow-lg cursor-pointer transition-all duration-300 hover:scale-105 ${isActive ? 'ring-2 ring-offset-2' : ''}`}
+              className={`flex items-center justify-center space-x-2 sm:space-x-3 px-2 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-3 md:py-4 rounded-lg sm:rounded-xl font-medium sm:font-semibold shadow-md sm:shadow-lg cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95 ${isActive ? 'ring-2 ring-offset-2' : ''}`}
               style={{
                 backgroundColor: isActive ? primaryColor : colors.bg,
                 color: isActive ? 'white' : colors.text,
                 border: `2px solid ${isActive ? primaryColor : colors.border}`
               }}
               onClick={() => handleCategoryClick(category)}
+              onTouchStart={(e) => handleTouchStartCategory(e, category)}
             >
               <span className='capitalize text-xs sm:text-sm md:text-base lg:text-lg'>
                 {category}
@@ -100,12 +123,13 @@ const QuestionsDisplay: React.FC = () => {
     return (
       <div
         key={question.id}
-        className='p-3 sm:p-4 md:p-5 lg:p-6 rounded-lg sm:rounded-xl border-2 shadow-md sm:shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer'
+        className='p-3 sm:p-4 md:p-5 lg:p-6 rounded-lg sm:rounded-xl border-2 shadow-md sm:shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer'
         style={{
           borderColor: borderColor,
           backgroundColor: secondaryColor
         }}
         onClick={() => toggleQuestionExpansion(question.id)}
+        onTouchStart={(e) => handleTouchStart(e, question.id)}
       >
         <div className='flex items-start space-x-2 sm:space-x-3 md:space-x-4'>
           <div className='w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center text-white text-sm sm:text-base md:text-lg font-bold flex-shrink-0'
@@ -124,7 +148,7 @@ const QuestionsDisplay: React.FC = () => {
               </span>
               <div className='flex items-center space-x-2'>
                 <span className='text-xs sm:text-sm' style={{ color: `${tertiaryColor}60` }}>
-                  {isExpanded ? 'Click to collapse' : 'Click to expand'}
+                  {isExpanded ? 'Tap to collapse' : 'Tap to expand'}
                 </span>
                 <svg className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 ${
                   isExpanded ? 'rotate-180' : ''
@@ -206,7 +230,7 @@ const QuestionsDisplay: React.FC = () => {
         </p>
         <button
           onClick={() => setQuestions(sampleQuestions)}
-          className='px-6 py-3 text-white rounded-lg transition-all duration-300 font-medium shadow-lg hover:shadow-xl'
+          className='px-6 py-3 text-white rounded-lg transition-all duration-300 font-medium shadow-lg hover:shadow-xl active:scale-95'
           style={{ backgroundColor: primaryColor }}
         >
           Load Sample Questions

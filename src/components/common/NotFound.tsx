@@ -1,17 +1,29 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useThemeStore } from '../../zustand_store/theme_store';
+import { isMobilePlatform } from '../../utils/mobileDetection';
 
 const NotFound: React.FC = () => {
+  const [isMobile, setIsMobile] = useState(false);
   const navigate = useNavigate();
   const { primaryColor, secondaryColor, tertiaryColor } = useThemeStore();
+
+  // Detect mobile platform
+  useEffect(() => {
+    setIsMobile(isMobilePlatform());
+  }, []);
 
   const handleGoHome = () => {
     navigate('/');
   };
 
   const handleGoBack = () => {
-    navigate(-1);
+    // Mobile-friendly navigation
+    if (isMobile) {
+      navigate('/practice');
+    } else {
+      navigate(-1);
+    }
   };
 
   return (
@@ -41,7 +53,7 @@ const NotFound: React.FC = () => {
         <div className="space-y-4">
           <button
             onClick={handleGoHome}
-            className="w-full py-3 px-6 rounded-lg text-white font-medium transition-all duration-200 hover:shadow-lg transform hover:-translate-y-0.5"
+            className="w-full py-3 px-6 rounded-lg text-white font-medium transition-all duration-200 hover:shadow-lg active:scale-95"
             style={{ backgroundColor: primaryColor }}
           >
             <div className="flex items-center justify-center space-x-2">
@@ -54,19 +66,11 @@ const NotFound: React.FC = () => {
 
           <button
             onClick={handleGoBack}
-            className="w-full py-3 px-6 rounded-lg font-medium transition-all duration-200 hover:shadow-lg transform hover:-translate-y-0.5 border-2"
+            className="w-full py-3 px-6 rounded-lg font-medium transition-all duration-200 hover:shadow-lg active:scale-95 border-2"
             style={{ 
               borderColor: `${primaryColor}30`,
               backgroundColor: `${primaryColor}08`,
               color: primaryColor
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = `${primaryColor}15`;
-              e.currentTarget.style.borderColor = primaryColor;
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = `${primaryColor}08`;
-              e.currentTarget.style.borderColor = `${primaryColor}30`;
             }}
           >
             <div className="flex items-center justify-center space-x-2">

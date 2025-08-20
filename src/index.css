@@ -27,52 +27,73 @@ code {
   background-clip: text;
 }
 
-/* Smooth animations */
+/* Smooth animations - Mobile optimized */
 * {
   transition: all 0.2s ease-in-out;
 }
 
-/* Custom button hover effects */
+/* Mobile-specific optimizations */
+@media (max-width: 768px) {
+  * {
+    transition: all 0.15s ease-in-out; /* Faster transitions on mobile */
+  }
+}
+
+/* Custom button hover effects - Mobile friendly */
 .btn-hover {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.btn-hover:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+/* Hover effects only on devices that support hover */
+@media (hover: hover) and (pointer: fine) {
+  .btn-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  }
 }
 
-/* Custom scrollbar styles */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 8px;
+/* Touch feedback for mobile devices */
+@media (hover: none) and (pointer: coarse) {
+  .btn-hover:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease-in-out;
+  }
 }
 
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(241, 245, 249, 0.5);
-  border-radius: 10px;
-  margin: 4px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #00b2d6;
-  border-radius: 10px;
-  border: 2px solid transparent;
-  background-clip: content-box;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #0099b3;
-  background-clip: content-box;
-}
-
-.custom-scrollbar::-webkit-scrollbar-corner {
-  background: transparent;
-}
-
-/* Firefox scrollbar */
+/* Custom scrollbar styles - Web only, mobile fallback */
 .custom-scrollbar {
+  /* Mobile-friendly scrollbar */
   scrollbar-width: thin;
   scrollbar-color: #00b2d6 rgba(241, 245, 249, 0.5);
+}
+
+/* WebKit scrollbars - Only apply on web platforms */
+@media (min-width: 769px) {
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(241, 245, 249, 0.5);
+    border-radius: 10px;
+    margin: 4px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #00b2d6;
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #0099b3;
+    background-clip: content-box;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-corner {
+    background: transparent;
+  }
 }
 
 /* Flexbox height fixes */
@@ -84,7 +105,7 @@ code {
   flex: 1 1 0%;
 }
 
-/* Modern dropdown styling */
+/* Modern dropdown styling - Mobile optimized */
 select {
   background-color: white;
   border-radius: 0.75rem;
@@ -94,6 +115,8 @@ select {
   line-height: 1.5rem;
   transition: all 0.3s ease;
   cursor: pointer;
+  /* Mobile-friendly touch target */
+  min-height: 44px;
 }
 
 select:focus {
@@ -116,9 +139,19 @@ select {
   padding-right: 2.5rem;
 }
 
-/* Hover effect for dropdowns */
-select:hover:not(:disabled) {
-  border-color: #00b2d6;
+/* Hover effect for dropdowns - Only on hover-capable devices */
+@media (hover: hover) and (pointer: fine) {
+  select:hover:not(:disabled) {
+    border-color: #00b2d6;
+  }
+}
+
+/* Touch feedback for mobile */
+@media (hover: none) and (pointer: coarse) {
+  select:active:not(:disabled) {
+    border-color: #00b2d6;
+    transform: scale(0.98);
+  }
 }
 
 
