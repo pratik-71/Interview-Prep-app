@@ -13,10 +13,13 @@ export class VersionService {
   private static instance: VersionService;
   private currentVersion: string;
   private updateCheckInterval: NodeJS.Timeout | null = null;
+  private isMobile: boolean = false;
 
   private constructor() {
     // Get version from centralized config
     this.currentVersion = APP_VERSION;
+    // Check if running on mobile
+    this.checkMobilePlatform();
   }
 
   public static getInstance(): VersionService {
@@ -24,6 +27,17 @@ export class VersionService {
       VersionService.instance = new VersionService();
     }
     return VersionService.instance;
+  }
+
+  // Check if running on mobile platform
+  private async checkMobilePlatform(): Promise<void> {
+    try {
+      const deviceInfo = await Device.getInfo();
+      this.isMobile = deviceInfo.platform === 'android' || deviceInfo.platform === 'ios';
+    } catch (error) {
+      // Fallback to user agent detection
+      this.isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    }
   }
 
   // Get current app version
@@ -125,32 +139,60 @@ export class VersionService {
     }
   }
 
-  // Force app update/reload
+  // Force app update/reload - Mobile-friendly version
   public forceUpdate(): void {
-    console.log('Forcing app update...');
-    
-    // Clear all caches
-    if ('caches' in window) {
-      caches.keys().then(names => {
-        names.forEach(name => {
-          caches.delete(name);
-        });
-      });
+    if (this.isMobile) {
+      // On mobile, just reload the app
+      this.reloadApp();
+    } else {
+      // On web, clear caches and reload
+      this.clearWebCaches();
     }
+  }
 
-    // Clear service worker
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(registrations => {
-        registrations.forEach(registration => {
-          registration.unregister();
+  // Clear web caches (web only)
+  private clearWebCaches(): void {
+    // Only run on web platform
+    if (typeof window !== 'undefined' && !this.isMobile) {
+      // Clear all caches
+      if ('caches' in window) {
+        caches.keys().then(names => {
+          names.forEach(name => {
+            caches.delete(name);
+          });
         });
-      });
+      }
+
+      // Clear service worker
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+          registrations.forEach(registration => {
+            registration.unregister();
+          });
+        });
+      }
     }
 
     // Force reload after a short delay
     setTimeout(() => {
-      window.location.reload();
+      this.reloadApp();
     }, 1000);
+  }
+
+  // Reload app (platform-agnostic)
+  private reloadApp(): void {
+    try {
+      // Simple reload that works on both web and mobile
+      if (typeof window !== 'undefined') {
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('Error reloading app:', error);
+      // Final fallback
+      if (typeof window !== 'undefined') {
+        window.location.reload();
+      }
+    }
   }
 
   // Get device info for debugging
@@ -161,11 +203,17 @@ export class VersionService {
         ...info,
         appVersion: this.currentVersion,
         userAgent: navigator.userAgent,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        isMobile: this.isMobile
       };
     } catch (error) {
       console.error('Error getting device info:', error);
-      return null;
+      return {
+        appVersion: this.currentVersion,
+        userAgent: navigator.userAgent,
+        timestamp: new Date().toISOString(),
+        isMobile: this.isMobile
+      };
     }
   }
 

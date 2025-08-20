@@ -1,24 +1,85 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import './index.css';
+import { useAuthStore } from './zustand_store/auth_store';
+import Layout from './Webpage/Layout';
+import Login from './components/auth/Login';
+import Register from './components/auth/Register';
+import Dashboard from './components/dashboard/Dashboard';
 import PracticeInterview from './Webpage/PracticeInterview';
 import QuestionsDisplay from './Webpage/QuestionsDisplay';
 import TestComponent from './Webpage/Test_Component';
-import Layout from './Webpage/Layout';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import NotFound from './components/common/NotFound';
 
 function App() {
+  const { checkAuth, isAuthenticated } = useAuthStore();
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
   return (
     <Router>
       <div className="App">
-        <Layout>
-          <Routes>
-            <Route path="/" element={<Navigate to="/practice" replace />} />
-            <Route path="/practice" element={<PracticeInterview />} />
-            <Route path="/practice/questions" element={<QuestionsDisplay />} />
-            <Route path="/test" element={<TestComponent />} />
-          </Routes>
-        </Layout>
+        <Routes>
+          <Route 
+            path="/" 
+            element={
+              isAuthenticated ? (
+                <Layout>
+                  <Navigate to="/practice" replace />
+                </Layout>
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            } 
+          />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route 
+            path="/dashboard" 
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Dashboard />
+                </Layout>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/practice" 
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <PracticeInterview />
+                </Layout>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/practice/questions" 
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <QuestionsDisplay />
+                </Layout>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/test" 
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <TestComponent />
+                </Layout>
+              </ProtectedRoute>
+            } 
+          />
+          {/* 404 - Catch all undefined routes */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
       </div>
     </Router>
   );
