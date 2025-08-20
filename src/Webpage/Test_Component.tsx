@@ -279,16 +279,16 @@ const TestComponent: React.FC = () => {
 
             {/* Center: Title */}
             <div className="flex-1 flex justify-center">
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold" style={{ color: tertiaryColor }}>
-                Interview Test
-              </h1>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold" style={{ color: tertiaryColor }}>
+              Interview Test
+            </h1>
             </div>
 
             {/* Right: Page Indicator */}
             <div className="flex-shrink-0">
-              <span className="text-lg font-semibold" style={{ color: primaryColor }}>
-                {currentQuestionIndex + 1} / {allQuestions.length}
-              </span>
+            <span className="text-lg font-semibold" style={{ color: primaryColor }}>
+              {currentQuestionIndex + 1} / {allQuestions.length}
+            </span>
             </div>
           </div>
           

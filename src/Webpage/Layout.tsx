@@ -46,10 +46,10 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   };
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-screen overflow-hidden">
       {/* Top Navbar */}
       <nav 
-        className="flex items-center justify-between px-4 sm:px-6 py-3 shadow-sm"
+        className="flex items-center justify-between px-4 sm:px-6 py-3 shadow-sm flex-shrink-0"
         style={{ backgroundColor: 'white', borderBottom: `2px solid ${primaryColor}20` }}
       >
         {/* Left: Hamburger Menu */}
@@ -98,7 +98,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           {/* Sidebar */}
           <div
             ref={sidebarRef}
-            className={`fixed left-0 top-0 h-full w-64 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${
+            className={`fixed left-0 top-0 h-full w-64 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out overflow-y-auto ${
               sidebarOpen ? 'translate-x-0' : '-translate-x-full'
             }`}
           >
@@ -208,8 +208,10 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       )}
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {children}
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        <div className="flex-1 overflow-y-auto">
+          {children}
+        </div>
       </div>
 
       {/* Update Notification */}
