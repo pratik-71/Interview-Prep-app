@@ -679,7 +679,6 @@ const TestComponent: React.FC = () => {
                       <div className="grid grid-cols-1 gap-3">
                         {allQuestions.map((question, index) => {
                           const marks = questionMarks[index]
-                          const result = questionResults[index]
                           const isAnswered = marks !== undefined
                           
                           return (
