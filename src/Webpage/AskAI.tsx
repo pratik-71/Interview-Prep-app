@@ -5,7 +5,6 @@ import GeminiService from '../services/geminiService';
 const AskAI: React.FC = () => {
 	const { primaryColor, secondaryColor, tertiaryColor } = useThemeStore();
 	const [question, setQuestion] = useState('');
-	const [answer, setAnswer] = useState<string>('');
 	const [isLoading, setIsLoading] = useState(false);
 	const [messages, setMessages] = useState<{ role: 'user' | 'ai'; content: string }[]>([]);
 	const endRef = useRef<HTMLDivElement>(null);
@@ -18,7 +17,6 @@ const AskAI: React.FC = () => {
 		e.preventDefault();
 		if (!question.trim()) return;
 		setIsLoading(true);
-		setAnswer('');
 		setMessages(prev => [...prev, { role: 'user', content: question }]);
 		try {
 			const gemini = GeminiService.getInstance();
@@ -26,12 +24,10 @@ const AskAI: React.FC = () => {
 				question,
 				'You are a helpful assistant. Answer clearly and concisely.'
 			);
-			setAnswer(response);
 			setMessages(prev => [...prev, { role: 'ai', content: response }]);
 			setQuestion('');
 		} catch (err) {
 			const msg = 'Sorry, something went wrong. Please try again later.';
-			setAnswer(msg);
 			setMessages(prev => [...prev, { role: 'ai', content: msg }]);
 		} finally {
 			setIsLoading(false);
