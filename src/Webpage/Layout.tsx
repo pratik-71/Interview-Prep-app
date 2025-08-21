@@ -66,7 +66,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         {/* Center: App Logo/Title */}
         <div className="flex items-center">
           <h1 className="text-xl font-bold" style={{ color: primaryColor }}>
-            Interview Prep
+            PrepMaster
           </h1>
       </div>
 

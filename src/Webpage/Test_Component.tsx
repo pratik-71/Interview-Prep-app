@@ -135,7 +135,7 @@ const TestComponent: React.FC = () => {
       const questionIndex = parseInt(index)
       const question = allQuestions[questionIndex]
       const difficulty = question.category as keyof typeof difficultyBreakdown
-      const marks = questionMarks[questionIndex]
+      const marks = result.marks // Use result.marks instead of questionMarks[questionIndex]
 
       if (difficultyBreakdown[difficulty]) {
         difficultyBreakdown[difficulty].count++
