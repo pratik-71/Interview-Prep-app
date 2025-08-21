@@ -21,16 +21,37 @@ export class ApiService {
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
     const config: RequestInit = {
+      mode: 'cors', // Explicitly set CORS mode
+      credentials: 'include', // Include credentials for CORS
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
         ...options.headers,
       },
       ...options,
     };
 
+    // Debug logging
+    console.log('🚀 API Request:', {
+      url,
+      method: config.method || 'GET',
+      body: config.body,
+      headers: config.headers
+    });
+
     try {
       const response = await fetch(url, config);
+      
+      // Debug response
+      console.log('📡 API Response:', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries())
+      });
+
       const data = await response.json();
+      
+      console.log('📦 Response Data:', data);
 
       if (!response.ok) {
         throw new Error(data.message || `HTTP error! status: ${response.status}`);
@@ -38,7 +59,7 @@ export class ApiService {
 
       return data;
     } catch (error) {
-      console.error('API request failed:', error);
+      console.error('❌ API request failed:', error);
       throw error;
     }
   }
@@ -55,10 +76,18 @@ export class ApiService {
 
   // POST request
   async post<T>(endpoint: string, data: any, token?: string): Promise<T> {
-    const headers: Record<string, string> = {};
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json', // Ensure Content-Type is set
+      'Accept': 'application/json'
+    };
+    
     if (token) {
       headers.Authorization = `Bearer ${token}`;
     }
+
+    // Debug the data being sent
+    console.log('📤 POST Data:', data);
+    console.log('📤 POST Headers:', headers);
     
     return this.request<T>(endpoint, {
       method: 'POST',

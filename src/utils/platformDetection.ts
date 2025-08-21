@@ -1,3 +1,5 @@
+import { getBackendUrl } from '../config/forceProduction';
+
 // Platform Detection Utility
 export const PlatformType = {
   WEB: 'web',
@@ -78,26 +80,11 @@ export const isDesktopWeb = (): boolean => {
 
 // Get environment-specific backend configuration
 export const getBackendConfig = () => {
-  if (isMobileApp()) {
-    // Mobile apps always use production backend
-    return {
-      BASE_URL: 'https://interview-prep-backend-viok.onrender.com',
-      API_BASE_URL: 'https://interview-prep-backend-viok.onrender.com',
-      IS_MOBILE: true,
-      PLATFORM: getPlatformType()
-    };
-  }
-  
-  // Web browsers use environment-based configuration
-  const isProduction = process.env.NODE_ENV === 'production';
+  const backendUrl = getBackendUrl();
   return {
-    BASE_URL: isProduction 
-      ? 'https://interview-prep-backend-viok.onrender.com' 
-      : 'http://localhost:10000',
-    API_BASE_URL: isProduction 
-      ? 'https://interview-prep-backend-viok.onrender.com' 
-      : 'http://localhost:10000',
-    IS_MOBILE: false,
-    PLATFORM: PlatformType.WEB
+    BASE_URL: backendUrl,
+    API_BASE_URL: backendUrl,
+    IS_MOBILE: isMobileApp(),
+    PLATFORM: getPlatformType()
   };
 };

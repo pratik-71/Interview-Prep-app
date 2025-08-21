@@ -21,14 +21,9 @@ const isMobileApp = () => {
 };
 
 // Get current environment
-export const getCurrentEnvironment = () => {
-  // If it's a mobile app, always use production backend
-  if (isMobileApp()) {
-    return 'PRODUCTION';
-  }
-  
-  // For web, check NODE_ENV
-  return process.env.NODE_ENV === 'production' ? 'PRODUCTION' : 'DEVELOPMENT';
+export const getCurrentEnvironment = (): 'PRODUCTION' => {
+  // Always use production backend for now
+  return 'PRODUCTION';
 };
 
 // Get current backend configuration
