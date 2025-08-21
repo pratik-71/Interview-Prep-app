@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
+import { apiService } from './apiService';
 
 export interface RegisterData {
   email: string;
@@ -25,51 +25,16 @@ export interface AuthResponse {
 }
 
 class AuthService {
-  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const url = `${API_BASE_URL}${endpoint}`;
-    const config: RequestInit = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-      ...options,
-    };
-
-    try {
-      const response = await fetch(url, config);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || `HTTP error! status: ${response.status}`);
-      }
-
-      return data;
-    } catch (error) {
-      console.error('API request failed:', error);
-      throw error;
-    }
-  }
-
   async register(data: RegisterData): Promise<AuthResponse> {
-    return this.request<AuthResponse>('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    return apiService.post<AuthResponse>('/auth/register', data);
   }
 
   async login(data: LoginData): Promise<AuthResponse> {
-    return this.request<AuthResponse>('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    return apiService.post<AuthResponse>('/auth/login', data);
   }
 
   async getCurrentUser(token: string): Promise<{ user: User }> {
-    return this.request<{ user: User }>('/auth/me', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    return apiService.get<{ user: User }>('/auth/me', token);
   }
 
   // Helper method to get token from localStorage
