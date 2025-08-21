@@ -155,3 +155,26 @@ select {
 }
 
 
+/* Responsive global scale-down for tablet/desktop (mobile stays 100%) */
+html {
+  font-size: 100%;
+}
+
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  html {
+    font-size: 93.75%; /* ~15px base */
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1279.98px) {
+  html {
+    font-size: 90%; /* ~14.4px base */
+  }
+}
+
+@media (min-width: 1280px) {
+  html {
+    font-size: 87.5%; /* 14px base */
+  }
+}
+

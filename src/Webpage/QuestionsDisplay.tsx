@@ -53,12 +53,12 @@ const QuestionsDisplay: React.FC = () => {
 
   const renderHeader = () => (
     <div className='flex items-center justify-between mb-1 sm:mb-2 md:mb-2 px-2 pt-2'>
-      <h2 className='text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold'
+      <h2 className='text-xl sm:text-2xl md:text-2xl lg:text-3xl font-bold'
         style={{ color: tertiaryColor }}>
         Interview Questions
       </h2>
       <button
-        className="rounded-lg px-4 py-2 text-white transition-all duration-300 hover:scale-105 active:scale-95"
+        className="rounded-lg px-4 py-2 md:px-4 md:py-2 lg:px-5 lg:py-3 text-white transition-all duration-300 hover:scale-105 active:scale-95"
         style={{ backgroundColor: primaryColor }}
         onClick={handleStartTest}
         disabled={!questions}
@@ -85,7 +85,7 @@ const QuestionsDisplay: React.FC = () => {
           return (
             <div
               key={category}
-              className={`flex items-center justify-center space-x-2 sm:space-x-3 px-2 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-3 md:py-4 rounded-lg sm:rounded-xl font-medium sm:font-semibold shadow-md sm:shadow-lg cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95 ${isActive ? 'ring-2 ring-offset-2' : ''}`}
+              className={`flex items-center justify-center space-x-2 sm:space-x-3 px-2 sm:px-3 md:px-3 lg:px-4 py-2 sm:py-3 md:py-3 rounded-lg sm:rounded-xl font-medium sm:font-semibold shadow-md sm:shadow-lg cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95 ${isActive ? 'ring-2 ring-offset-2' : ''}`}
               style={{
                 backgroundColor: isActive ? primaryColor : colors.bg,
                 color: isActive ? 'white' : colors.text,
@@ -94,10 +94,10 @@ const QuestionsDisplay: React.FC = () => {
               onClick={() => handleCategoryClick(category)}
               onTouchStart={(e) => handleTouchStartCategory(e, category)}
             >
-              <span className='capitalize text-xs sm:text-sm md:text-base lg:text-lg'>
+              <span className='capitalize text-xs sm:text-sm md:text-sm lg:text-base'>
                 {category}
               </span>
-              <span className='px-1 sm:px-2 md:px-3 py-1 rounded-full text-xs sm:text-sm font-bold text-white'
+              <span className='px-1 sm:px-2 md:px-2 py-1 rounded-full text-xs sm:text-sm font-bold text-white'
                 style={{
                   backgroundColor: isActive ? 'white' : primaryColor,
                   color: isActive ? primaryColor : 'white'
@@ -123,7 +123,7 @@ const QuestionsDisplay: React.FC = () => {
     return (
       <div
         key={question.id}
-        className='p-3 sm:p-4 md:p-5 lg:p-6 rounded-lg sm:rounded-xl border-2 shadow-md sm:shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer'
+        className='p-3 sm:p-4 md:p-4 lg:p-5 rounded-lg sm:rounded-xl border-2 shadow-md sm:shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer'
         style={{
           borderColor: borderColor,
           backgroundColor: secondaryColor
@@ -131,13 +131,13 @@ const QuestionsDisplay: React.FC = () => {
         onClick={() => toggleQuestionExpansion(question.id)}
         onTouchStart={(e) => handleTouchStart(e, question.id)}
       >
-        <div className='flex items-start space-x-2 sm:space-x-3 md:space-x-4'>
-          <div className='w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center text-white text-sm sm:text-base md:text-lg font-bold flex-shrink-0'
+        <div className='flex items-start space-x-2 sm:space-x-3 md:space-x-3'>
+          <div className='w-8 h-8 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-full flex items-center justify-center text-white text-sm sm:text-base md:text-base font-bold flex-shrink-0'
             style={{ backgroundColor: primaryColor }}>
             {index + 1}
           </div>
           <div className='flex-1 min-w-0'>
-            <p className='text-sm sm:text-base md:text-lg lg:text-xl font-medium mb-2 sm:mb-3'
+            <p className='text-sm sm:text-base md:text-base lg:text-lg font-medium mb-2 sm:mb-3'
               style={{ color: tertiaryColor }}>
               {question.question}
             </p>

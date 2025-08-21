@@ -7,6 +7,7 @@ import Login from './components/auth/Login';
 import Register from './components/auth/Register';
 import Dashboard from './components/dashboard/Dashboard';
 import PracticeInterview from './Webpage/PracticeInterview';
+import AskAI from './Webpage/AskAI';
 import QuestionsDisplay from './Webpage/QuestionsDisplay';
 import TestComponent from './Webpage/Test_Component';
 import ProtectedRoute from './components/auth/ProtectedRoute';
@@ -53,6 +54,16 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <PracticeInterview />
+                </Layout>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/ask-ai" 
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <AskAI />
                 </Layout>
               </ProtectedRoute>
             } 

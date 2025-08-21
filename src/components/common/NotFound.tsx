@@ -39,13 +39,13 @@ const NotFound: React.FC = () => {
         </div>
 
         {/* Error Message */}
-        <h1 className="text-6xl font-bold mb-4" style={{ color: primaryColor }}>
+        <h1 className="text-5xl md:text-5xl lg:text-6xl font-bold mb-4" style={{ color: primaryColor }}>
           404
         </h1>
-        <h2 className="text-2xl font-bold mb-4" style={{ color: tertiaryColor }}>
+        <h2 className="text-xl md:text-2xl font-bold mb-4" style={{ color: tertiaryColor }}>
           Page Not Found
         </h2>
-        <p className="text-lg mb-8" style={{ color: `${tertiaryColor}80` }}>
+        <p className="text-base md:text-lg mb-8" style={{ color: `${tertiaryColor}80` }}>
           Oops! The page you're looking for doesn't exist. It might have been moved, deleted, or you entered the wrong URL.
         </p>
 
