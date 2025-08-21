@@ -139,33 +139,33 @@ const PracticeInterview: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col min-h-0 overflow-hidden" style={{ backgroundColor: secondaryColor }}>
-      <div className="flex-1 overflow-y-auto px-4 sm:px-6 md:px-8 custom-scrollbar"
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 md:px-7 custom-scrollbar"
         style={{
           scrollbarWidth: 'thin',
           scrollbarColor: `${primaryColor} ${secondaryColor}`
         }}>
-        <div className="w-full max-w-4xl mx-auto py-6">
+        <div className="w-full max-w-3xl mx-auto py-6">
           {/* Header */}
-          <div className="text-center mb-8">
+          <div className="text-center mb-7 md:mb-7 lg:mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4" style={{ backgroundColor: `${primaryColor}15` }}>
               <svg className="w-8 h-8" style={{ color: primaryColor }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h1 className="text-3xl font-bold mb-2" style={{ color: tertiaryColor }}>
+            <h1 className="text-2xl md:text-2xl lg:text-3xl font-bold mb-2" style={{ color: tertiaryColor }}>
               Practice Interview
             </h1>
-            <p className="text-lg" style={{ color: `${tertiaryColor}80` }}>
+            <p className="text-base md:text-base lg:text-lg" style={{ color: `${tertiaryColor}80` }}>
               Choose your technology focus area
             </p>
           </div>
 
           {/* Offline Button */}
-          <div className="text-center mb-6">
+          <div className="text-center mb-5 md:mb-6">
             <button
               onClick={handleGoOffline}
               onTouchStart={handleTouchStartOffline}
-              className="px-6 py-3 rounded-xl font-medium transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-lg border-2"
+              className="px-5 md:px-6 py-3 rounded-xl font-medium transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-lg border-2"
               style={{ 
                 borderColor: `${primaryColor}30`,
                 backgroundColor: `${primaryColor}08`,
@@ -182,14 +182,14 @@ const PracticeInterview: React.FC = () => {
           </div>
 
           {/* Technology Grid */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3 md:gap-4">
             {techOptions.map((tech) => (
               <button
                 key={tech.id}
                 onClick={() => handleTechClick(tech.id)}
                 onTouchStart={(e) => handleTouchStart(e, tech.id)}
                 disabled={isLoading}
-                className="p-4 rounded-xl border-2 transition-all duration-300 text-center group hover:scale-105 active:scale-95 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-4 md:p-4 lg:p-5 rounded-xl border-2 transition-all duration-300 text-center group hover:scale-105 active:scale-95 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ 
                   borderColor: `${primaryColor}20`,
                   backgroundColor: 'white'
@@ -197,12 +197,12 @@ const PracticeInterview: React.FC = () => {
               >
                 <div className="flex flex-col items-center space-y-3">
                   <div 
-                    className="w-16 h-16 rounded-lg flex items-center justify-center text-3xl flex-shrink-0"
+                    className="w-14 h-14 md:w-16 md:h-16 rounded-lg flex items-center justify-center text-3xl flex-shrink-0"
                     style={{ backgroundColor: tech.color }}
                   >
                     {tech.icon}
                   </div>
-                  <h3 className="text-lg font-bold" style={{ color: tertiaryColor }}>
+                  <h3 className="text-base md:text-lg font-bold" style={{ color: tertiaryColor }}>
                     {tech.name}
                   </h3>
                   {isLoading && (

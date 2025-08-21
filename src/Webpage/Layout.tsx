@@ -49,35 +49,35 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     <div className="flex flex-col h-screen overflow-hidden">
       {/* Top Navbar */}
       <nav 
-        className="flex items-center justify-between px-4 sm:px-6 py-3 shadow-sm flex-shrink-0"
+        className="flex items-center justify-between px-4 sm:px-6 md:px-6 lg:px-8 py-3 md:py-3 lg:py-4 shadow-sm flex-shrink-0"
         style={{ backgroundColor: 'white', borderBottom: `2px solid ${primaryColor}20` }}
       >
         {/* Left: Hamburger Menu */}
         <button
           ref={hamburgerRef}
           onClick={toggleSidebar}
-          className="p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200"
+          className="p-2 md:p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200"
         >
-          <svg className="w-6 h-6" style={{ color: tertiaryColor }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-6 h-6 md:w-6 md:h-6 lg:w-7 lg:h-7" style={{ color: tertiaryColor }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
 
         {/* Center: App Logo/Title */}
         <div className="flex items-center">
-          <h1 className="text-xl font-bold" style={{ color: primaryColor }}>
+          <h1 className="text-xl md:text-xl lg:text-2xl font-bold" style={{ color: primaryColor }}>
             PrepMaster
           </h1>
       </div>
 
         {/* Right: Profile Photo */}
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-3 md:space-x-3">
           <button 
             onClick={() => navigate('/dashboard')}
-            className="p-1 rounded-full hover:bg-gray-100 transition-colors duration-200"
+            className="p-1 md:p-1 rounded-full hover:bg-gray-100 transition-colors duration-200"
           >
-            <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center hover:bg-gray-400 transition-colors duration-200">
-              <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-8 h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 rounded-full bg-gray-300 flex items-center justify-center hover:bg-gray-400 transition-colors duration-200">
+              <svg className="w-5 h-5 md:w-5 md:h-5 lg:w-6 lg:h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
             </div>
@@ -183,6 +183,24 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
               {/* Additional Menu Items */}
               <div className="space-y-2">
+                {/* Ask AI */}
+                <button
+                  onClick={() => handleNavigation('/ask-ai')}
+                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                    isActiveRoute('/ask-ai') ? 'text-white shadow-lg' : 'hover:bg-gray-100'
+                  }`}
+                  style={{
+                    backgroundColor: isActiveRoute('/ask-ai') ? primaryColor : 'transparent',
+                    color: isActiveRoute('/ask-ai') ? 'white' : tertiaryColor
+                  }}
+                >
+                  <div className="w-5 h-5">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2v-5a2 2 0 00-1.106-1.788l-5-2.5a2 2 0 00-1.788 0l-5 2.5A2 2 0 004 14v5a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <span className="font-medium">Ask AI</span>
+                </button>
                 <button className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-100 transition-colors duration-200">
                   <div className="w-5 h-5">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">

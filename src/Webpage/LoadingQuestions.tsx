@@ -38,7 +38,7 @@ const LoadingQuestions: React.FC<LoadingQuestionsProps> = ({ field, subfield, on
                 </svg>
               </div>
               <div>
-                <h2 className="text-xl font-bold" style={{ color: tertiaryColor }}>Generating Questions</h2>
+                <h2 className="text-lg md:text-xl font-bold" style={{ color: tertiaryColor }}>Generating Questions</h2>
                 <p className="text-sm" style={{ color: `${tertiaryColor}80` }}>
                   Creating interview questions for {field} - {subfield}
                 </p>
@@ -47,7 +47,7 @@ const LoadingQuestions: React.FC<LoadingQuestionsProps> = ({ field, subfield, on
           </div>
 
           {/* Loading Content */}
-          <div className="px-6 py-8 text-center">
+          <div className="px-6 py-7 md:py-8 text-center">
             {/* Animated Loading Icon */}
             <div className="mb-6">
               <div className="relative w-20 h-20 mx-auto">
@@ -70,7 +70,7 @@ const LoadingQuestions: React.FC<LoadingQuestionsProps> = ({ field, subfield, on
 
             {/* Loading Text */}
             <div className="space-y-3">
-              <h3 className="text-lg font-semibold" style={{ color: tertiaryColor }}>
+              <h3 className="text-base md:text-lg font-semibold" style={{ color: tertiaryColor }}>
                 AI is crafting your questions...
               </h3>
               <p className="text-sm" style={{ color: `${tertiaryColor}80` }}>

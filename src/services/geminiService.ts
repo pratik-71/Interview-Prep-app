@@ -38,6 +38,19 @@ export class GeminiService {
     this.model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
   }
 
+  async askQuestion(question: string, systemInstruction?: string): Promise<string> {
+    try {
+      const prompt = `${systemInstruction ? systemInstruction + "\n\n" : ''}User question: ${question}`;
+      const result = await this.model.generateContent(prompt);
+      const response = await result.response;
+      const text = typeof response.text === 'function' ? response.text() : String(response);
+      return text?.trim() || 'No response';
+    } catch (error) {
+      console.error('Error asking Gemini:', error);
+      return 'Sorry, I could not get an answer right now. Please try again later.';
+    }
+  }
+
   public static getInstance(): GeminiService {
     if (!GeminiService.instance) {
       GeminiService.instance = new GeminiService();
