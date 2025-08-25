@@ -2,6 +2,7 @@
 import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './zustand_store/auth_store';
+import { useThemeStore } from './zustand_store/theme_store';
 import Layout from './Webpage/Layout';
 import Login from './components/auth/Login';
 import Register from './components/auth/Register';
@@ -15,10 +16,16 @@ import NotFound from './components/common/NotFound';
 
 function App() {
   const { checkAuth, isAuthenticated } = useAuthStore();
+  const { isDarkMode } = useThemeStore();
 
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
+
+  // Initialize theme on app load
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
+  }, [isDarkMode]);
 
   return (
     <Router>

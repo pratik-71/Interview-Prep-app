@@ -4,6 +4,26 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
+:root {
+  /* Light mode variables */
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --border-color: #e5e7eb;
+  --shadow-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] {
+  /* Dark mode variables */
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --border-color: #334155;
+  --shadow-color: rgba(0, 0, 0, 0.3);
+}
+
 body {
   margin: 0;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -11,7 +31,9 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 50%, #c7d2fe 100%);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 code {
@@ -48,7 +70,7 @@ code {
 @media (hover: hover) and (pointer: fine) {
   .btn-hover:hover {
     transform: translateY(-2px);
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 20px 25px -5px var(--shadow-color), 0 10px 10px -5px var(--shadow-color);
   }
 }
 
@@ -107,9 +129,10 @@ code {
 
 /* Modern dropdown styling - Mobile optimized */
 select {
-  background-color: white;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
   border-radius: 0.75rem;
-  border: 2px solid;
+  border: 2px solid var(--border-color);
   padding: 0.75rem 1rem;
   font-size: 1rem;
   line-height: 1.5rem;
@@ -125,7 +148,7 @@ select:focus {
 }
 
 select:disabled {
-  background-color: #f9fafb;
+  background-color: var(--bg-primary);
   cursor: not-allowed;
   opacity: 0.6;
 }
@@ -154,7 +177,6 @@ select {
   }
 }
 
-
 /* Responsive global scale-down for tablet/desktop (mobile stays 100%) */
 html {
   font-size: 100%;
@@ -176,5 +198,14 @@ html {
   html {
     font-size: 87.5%; /* 14px base */
   }
+}
+
+/* Dark mode specific styles */
+[data-theme="dark"] .custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+}
+
+[data-theme="dark"] select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23cbd5e1' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
 }
 

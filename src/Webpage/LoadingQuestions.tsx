@@ -10,7 +10,14 @@ interface LoadingQuestionsProps {
 
 const LoadingQuestions: React.FC<LoadingQuestionsProps> = ({ field, subfield, onCancel }) => {
   const [isMobile, setIsMobile] = useState(false);
-  const { primaryColor, secondaryColor, tertiaryColor } = useThemeStore();
+  const { 
+    primaryColor, 
+    backgroundColor, 
+    surfaceColor, 
+    textColor, 
+    textSecondaryColor,
+    borderColor
+  } = useThemeStore();
 
   // Detect mobile platform
   useEffect(() => {
@@ -26,11 +33,20 @@ const LoadingQuestions: React.FC<LoadingQuestionsProps> = ({ field, subfield, on
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center p-4 z-50" style={{ backgroundColor: `${tertiaryColor}cc` }}>
-      <div className="w-full max-w-md mx-auto" style={{ backgroundColor: secondaryColor }}>
-        <div className="rounded-2xl shadow-2xl overflow-hidden border" style={{ borderColor: `${primaryColor}30` }}>
+    <div 
+      className="fixed inset-0 flex items-center justify-center p-4 z-50 transition-colors duration-300" 
+      style={{ backgroundColor: `${textColor}cc` }}
+    >
+      <div className="w-full max-w-md mx-auto transition-colors duration-300" style={{ backgroundColor: backgroundColor }}>
+        <div 
+          className="rounded-2xl shadow-2xl overflow-hidden border transition-colors duration-300" 
+          style={{ borderColor: `${primaryColor}30` }}
+        >
           {/* Header */}
-          <div className="px-6 py-5" style={{ backgroundColor: `${primaryColor}08` }}>
+          <div 
+            className="px-6 py-5 transition-colors duration-300" 
+            style={{ backgroundColor: `${primaryColor}08` }}
+          >
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: primaryColor }}>
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -38,8 +54,8 @@ const LoadingQuestions: React.FC<LoadingQuestionsProps> = ({ field, subfield, on
                 </svg>
               </div>
               <div>
-                <h2 className="text-lg md:text-xl font-bold" style={{ color: tertiaryColor }}>Generating Questions</h2>
-                <p className="text-sm" style={{ color: `${tertiaryColor}80` }}>
+                <h2 className="text-lg md:text-xl font-bold transition-colors duration-300" style={{ color: textColor }}>Generating Questions</h2>
+                <p className="text-sm transition-colors duration-300" style={{ color: textSecondaryColor }}>
                   Creating interview questions for {field} - {subfield}
                 </p>
               </div>
@@ -70,10 +86,10 @@ const LoadingQuestions: React.FC<LoadingQuestionsProps> = ({ field, subfield, on
 
             {/* Loading Text */}
             <div className="space-y-3">
-              <h3 className="text-base md:text-lg font-semibold" style={{ color: tertiaryColor }}>
+              <h3 className="text-base md:text-lg font-semibold transition-colors duration-300" style={{ color: textColor }}>
                 AI is crafting your questions...
               </h3>
-              <p className="text-sm" style={{ color: `${tertiaryColor}80` }}>
+              <p className="text-sm transition-colors duration-300" style={{ color: textSecondaryColor }}>
                 We're generating 24 tailored interview questions across three difficulty levels using Gemini AI.
               </p>
               
@@ -83,48 +99,44 @@ const LoadingQuestions: React.FC<LoadingQuestionsProps> = ({ field, subfield, on
                   <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: primaryColor }}>
                     ✓
                   </div>
-                  <span className="text-sm" style={{ color: `${tertiaryColor}80` }}>Analyzing field requirements</span>
+                  <span className="text-sm transition-colors duration-300" style={{ color: textSecondaryColor }}>Analyzing field requirements</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: primaryColor }}>
                     ✓
                   </div>
-                  <span className="text-sm" style={{ color: `${tertiaryColor}80` }}>Generating beginner questions</span>
+                  <span className="text-sm transition-colors duration-300" style={{ color: textSecondaryColor }}>Generating beginner questions</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: primaryColor }}>
                     ✓
                   </div>
-                  <span className="text-sm" style={{ color: `${tertiaryColor}80` }}>Creating intermediate questions</span>
+                  <span className="text-sm transition-colors duration-300" style={{ color: textSecondaryColor }}>Creating intermediate questions</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: primaryColor }}>
                     ✓
                   </div>
-                  <span className="text-sm" style={{ color: `${tertiaryColor}80` }}>Formulating expert questions</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white animate-pulse" style={{ backgroundColor: primaryColor }}>
-                    ⚡
-                  </div>
-                  <span className="text-sm" style={{ color: `${tertiaryColor}80` }}>Finalizing and formatting</span>
+                  <span className="text-sm transition-colors duration-300" style={{ color: textSecondaryColor }}>Finalizing advanced questions</span>
                 </div>
               </div>
             </div>
 
             {/* Cancel Button */}
-            <button
-              onClick={onCancel}
-              onTouchStart={handleTouchStart}
-              className="mt-6 px-6 py-2 border-2 rounded-lg transition-all duration-200 font-medium active:scale-95"
-              style={{ 
-                borderColor: `${primaryColor}30`,
-                color: tertiaryColor,
-                backgroundColor: secondaryColor
-              }}
-            >
-              Cancel Generation
-            </button>
+            <div className="mt-8">
+              <button
+                onClick={onCancel}
+                onTouchStart={handleTouchStart}
+                className="px-6 py-2.5 rounded-lg border-2 transition-all duration-200 hover:shadow-md active:scale-95"
+                style={{ 
+                  borderColor: `${primaryColor}30`,
+                  backgroundColor: `${primaryColor}08`,
+                  color: primaryColor
+                }}
+              >
+                Cancel Generation
+              </button>
+            </div>
           </div>
         </div>
       </div>

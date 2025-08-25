@@ -20,7 +20,15 @@ const PracticeInterview: React.FC = () => {
   const [isMobile, setIsMobile] = useState(false);
   
   const navigate = useNavigate();
-  const { primaryColor, secondaryColor, tertiaryColor } = useThemeStore();
+  const { 
+    primaryColor, 
+    backgroundColor, 
+    surfaceColor, 
+    textColor, 
+    textSecondaryColor,
+    borderColor,
+    cardColor
+  } = useThemeStore();
   const { setQuestions } = useQuestionsStore();
 
   // Detect mobile platform
@@ -98,120 +106,78 @@ const PracticeInterview: React.FC = () => {
     navigate('/practice/questions');
   };
 
-  // Mobile-friendly event handlers
-  const handleTouchStart = (e: React.TouchEvent, techId: string) => {
-    if (isMobile) {
-      e.preventDefault();
-      handleTechClick(techId);
-    }
-  };
-
-  const handleTouchStartOffline = (e: React.TouchEvent) => {
-    if (isMobile) {
-      e.preventDefault();
-      handleGoOffline();
-    }
-  };
-
-  // Show loading state
   if (isLoading) {
     return (
-      <div className="flex-1 flex flex-col min-h-0 overflow-hidden" style={{ backgroundColor: secondaryColor }}>
-        <div className="flex-1 overflow-y-auto px-4 sm:px-6 md:px-8 custom-scrollbar"
-          style={{
-            scrollbarWidth: 'thin',
-            scrollbarColor: `${primaryColor} ${secondaryColor}`
-          }}>
-          <div className="w-full max-w-4xl mx-auto py-6">
-            <LoadingQuestions
-              field={techOptions.find(t => t.id === selectedTech)?.name || selectedTech}
-              subfield="Programming"
-              onCancel={() => {
-                setIsLoading(false);
-                setSelectedTech('');
-              }}
-            />
-          </div>
-        </div>
-      </div>
+      <LoadingQuestions 
+        field={techOptions.find(t => t.id === selectedTech)?.name || selectedTech}
+        subfield="Programming"
+        onCancel={() => {
+          setIsLoading(false);
+          setSelectedTech('');
+        }}
+      />
     );
   }
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 overflow-hidden" style={{ backgroundColor: secondaryColor }}>
-      <div className="flex-1 overflow-y-auto px-4 sm:px-6 md:px-7 custom-scrollbar"
-        style={{
-          scrollbarWidth: 'thin',
-          scrollbarColor: `${primaryColor} ${secondaryColor}`
-        }}>
-        <div className="w-full max-w-3xl mx-auto py-6">
-          {/* Header */}
-          <div className="text-center mb-7 md:mb-7 lg:mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4" style={{ backgroundColor: `${primaryColor}15` }}>
-              <svg className="w-8 h-8" style={{ color: primaryColor }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <h1 className="text-2xl md:text-2xl lg:text-3xl font-bold mb-2" style={{ color: tertiaryColor }}>
-              Practice Interview
-            </h1>
-            <p className="text-base md:text-base lg:text-lg" style={{ color: `${tertiaryColor}80` }}>
-              Choose your technology focus area
-            </p>
-          </div>
+    <div 
+      className="min-h-screen transition-colors duration-300" 
+      style={{ backgroundColor: backgroundColor }}
+    >
+      <div className="max-w-6xl mx-auto py-6 md:py-8 lg:py-10 px-4 md:px-5 lg:px-6">
+        {/* Header */}
+        <div className="text-center mb-8 md:mb-10 lg:mb-12">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-5 lg:mb-6 transition-colors duration-300" style={{ color: textColor }}>
+            Practice Interview
+          </h1>
+          <p className="text-lg md:text-xl lg:text-2xl transition-colors duration-300" style={{ color: textSecondaryColor }}>
+            Choose a technology to start practicing
+          </p>
+        </div>
 
-          {/* Offline Button */}
-          <div className="text-center mb-5 md:mb-6">
+        {/* Technology Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4 md:gap-5 lg:gap-6 mb-8 md:mb-10 lg:mb-12">
+          {techOptions.map((tech) => (
             <button
-              onClick={handleGoOffline}
-              onTouchStart={handleTouchStartOffline}
-              className="px-5 md:px-6 py-3 rounded-xl font-medium transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-lg border-2"
+              key={tech.id}
+              onClick={() => handleTechClick(tech.id)}
+              className="group p-6 md:p-7 lg:p-8 rounded-2xl border-2 transition-all duration-300 hover:shadow-xl transform hover:-translate-y-2 active:scale-95"
               style={{ 
-                borderColor: `${primaryColor}30`,
-                backgroundColor: `${primaryColor}08`,
-                color: primaryColor
+                backgroundColor: surfaceColor,
+                borderColor: borderColor
               }}
             >
-              <div className="flex items-center space-x-2">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-                <span>Go Offline - Load Sample Questions</span>
+              <div className="text-center">
+                <div className="text-4xl md:text-5xl lg:text-6xl mb-4 md:mb-5">
+                  {tech.icon}
+                </div>
+                <h3 className="text-lg md:text-xl lg:text-2xl font-bold mb-2 md:mb-3 transition-colors duration-300" style={{ color: textColor }}>
+                  {tech.name}
+                </h3>
+                <p className="text-sm md:text-base transition-colors duration-300" style={{ color: textSecondaryColor }}>
+                  Click to start
+                </p>
               </div>
             </button>
-          </div>
+          ))}
+        </div>
 
-          {/* Technology Grid */}
-          <div className="grid grid-cols-2 gap-3 md:gap-4">
-            {techOptions.map((tech) => (
-              <button
-                key={tech.id}
-                onClick={() => handleTechClick(tech.id)}
-                onTouchStart={(e) => handleTouchStart(e, tech.id)}
-                disabled={isLoading}
-                className="p-4 md:p-4 lg:p-5 rounded-xl border-2 transition-all duration-300 text-center group hover:scale-105 active:scale-95 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ 
-                  borderColor: `${primaryColor}20`,
-                  backgroundColor: 'white'
-                }}
-              >
-                <div className="flex flex-col items-center space-y-3">
-                  <div 
-                    className="w-14 h-14 md:w-16 md:h-16 rounded-lg flex items-center justify-center text-3xl flex-shrink-0"
-                    style={{ backgroundColor: tech.color }}
-                  >
-                    {tech.icon}
-                  </div>
-                  <h3 className="text-base md:text-lg font-bold" style={{ color: tertiaryColor }}>
-                    {tech.name}
-                  </h3>
-                  {isLoading && (
-                    <div className="w-5 h-5 border-2 border-gray-300 border-t-transparent rounded-full animate-spin"></div>
-                  )}
-                </div>
-              </button>
-            ))}
-          </div>
+        {/* Offline Option */}
+        <div className="text-center">
+          <button
+            onClick={handleGoOffline}
+            className="inline-flex items-center space-x-2 px-6 md:px-7 lg:px-8 py-3 md:py-3 lg:py-4 rounded-lg border-2 transition-all duration-200 hover:shadow-lg"
+            style={{ 
+              borderColor: `${primaryColor}30`,
+              backgroundColor: `${primaryColor}08`,
+              color: primaryColor
+            }}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            <span>Practice with Sample Questions (Offline)</span>
+          </button>
         </div>
       </div>
     </div>

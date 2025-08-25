@@ -11,7 +11,15 @@ const QuestionsDisplay: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<'beginner' | 'intermediate' | 'expert'>('beginner');
   const [isMobile, setIsMobile] = useState(false);
   const navigate = useNavigate();
-  const { primaryColor, secondaryColor, tertiaryColor } = useThemeStore();
+  const { 
+    primaryColor, 
+    backgroundColor, 
+    surfaceColor, 
+    textColor, 
+    textSecondaryColor,
+    borderColor,
+    cardColor
+  } = useThemeStore();
 
   // Detect mobile platform
   useEffect(() => {
@@ -53,8 +61,8 @@ const QuestionsDisplay: React.FC = () => {
 
   const renderHeader = () => (
     <div className='flex items-center justify-between mb-1 sm:mb-2 md:mb-2 px-2 pt-2'>
-      <h2 className='text-xl sm:text-2xl md:text-2xl lg:text-3xl font-bold'
-        style={{ color: tertiaryColor }}>
+      <h2 className='text-xl sm:text-2xl md:text-2xl lg:text-3xl font-bold transition-colors duration-300'
+        style={{ color: textColor }}>
         Interview Questions
       </h2>
       <button
@@ -77,8 +85,8 @@ const QuestionsDisplay: React.FC = () => {
           const isActive = activeCategory === category;
           const categoryColors = [
             { bg: `${primaryColor}15`, text: primaryColor, border: `${primaryColor}30` },
-            { bg: `${secondaryColor}`, text: tertiaryColor, border: `${primaryColor}20` },
-            { bg: `${tertiaryColor}15`, text: tertiaryColor, border: `${primaryColor}40` }
+            { bg: surfaceColor, text: textColor, border: `${primaryColor}20` },
+            { bg: `${textColor}15`, text: textColor, border: `${primaryColor}40` }
           ];
           const colors = categoryColors[index];
 
@@ -126,7 +134,7 @@ const QuestionsDisplay: React.FC = () => {
         className='p-3 sm:p-4 md:p-4 lg:p-5 rounded-lg sm:rounded-xl border-2 shadow-md sm:shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer'
         style={{
           borderColor: borderColor,
-          backgroundColor: secondaryColor
+          backgroundColor: surfaceColor
         }}
         onClick={() => toggleQuestionExpansion(question.id)}
         onTouchStart={(e) => handleTouchStart(e, question.id)}
@@ -138,7 +146,7 @@ const QuestionsDisplay: React.FC = () => {
           </div>
           <div className='flex-1 min-w-0'>
             <p className='text-sm sm:text-base md:text-base lg:text-lg font-medium mb-2 sm:mb-3'
-              style={{ color: tertiaryColor }}>
+              style={{ color: textColor }}>
               {question.question}
             </p>
             <div className='flex items-center justify-between'>
@@ -147,7 +155,7 @@ const QuestionsDisplay: React.FC = () => {
                 {activeCategory.charAt(0).toUpperCase() + activeCategory.slice(1)}
               </span>
               <div className='flex items-center space-x-2'>
-                <span className='text-xs sm:text-sm' style={{ color: `${tertiaryColor}60` }}>
+                <span className='text-xs sm:text-sm' style={{ color: `${textSecondaryColor}60` }}>
                   {isExpanded ? 'Tap to collapse' : 'Tap to expand'}
                 </span>
                 <svg className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 ${
@@ -178,7 +186,7 @@ const QuestionsDisplay: React.FC = () => {
               <div>
                 <div className='p-4 rounded-lg' style={{ backgroundColor: `${primaryColor}05`, border: `1px solid ${primaryColor}20` }}>
                   <p className='text-sm sm:text-base md:text-lg leading-relaxed'
-                    style={{ color: tertiaryColor }}>{question.answer}</p>
+                    style={{ color: textColor }}>{question.answer}</p>
                 </div>
               </div>
             </div>
@@ -196,7 +204,7 @@ const QuestionsDisplay: React.FC = () => {
         style={{
           minHeight: 0,
           scrollbarWidth: 'thin',
-          scrollbarColor: `${primaryColor} ${secondaryColor}`
+          scrollbarColor: `${primaryColor} ${backgroundColor}`
         }}>
         <div className='space-y-4 sm:space-y-6'>
           <div className='space-y-3 sm:space-y-4 mb-8'>
@@ -223,9 +231,9 @@ const QuestionsDisplay: React.FC = () => {
           </svg>
         </div>
         <h2 className='text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4'
-          style={{ color: tertiaryColor }}>Practice Interview</h2>
+          style={{ color: textColor }}>Practice Interview</h2>
         <p className='text-sm sm:text-base md:text-lg lg:text-xl mb-4 sm:mb-6'
-          style={{ color: `${tertiaryColor}80` }}>
+          style={{ color: `${textSecondaryColor}80` }}>
           Load sample questions to get started
         </p>
         <button
