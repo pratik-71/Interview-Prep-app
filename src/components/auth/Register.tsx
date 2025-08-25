@@ -57,8 +57,8 @@ const Register: React.FC = () => {
 
   return (
     <div 
-      className="w-full flex items-center justify-center transition-colors duration-300" 
-      style={{ backgroundColor: backgroundColor, minHeight: 'calc(100vh - 64px)' }}
+      className="w-full flex items-center justify-center min-h-screen transition-colors duration-300" 
+      style={{ backgroundColor: backgroundColor }}
     >
       <div className="w-full max-w-md md:max-w-lg lg:max-w-lg px-6 md:px-7 lg:px-8">
         <div className="text-center mb-6 md:mb-7 lg:mb-8">

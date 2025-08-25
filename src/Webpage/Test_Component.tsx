@@ -5,11 +5,18 @@ import { AnswerEvaluation, AudioAnswerEvaluation, GeminiService } from '../servi
 import { Device } from '@capacitor/device'
 import { useNavigate } from 'react-router-dom'
 import { isMobilePlatform } from '../utils/mobileDetection'
+import { gsap } from 'gsap'
 
 const TestComponent: React.FC = () => {
   const { questions } = useQuestionsStore();
   const navigate = useNavigate();
   const [isMobile, setIsMobile] = useState(false);
+  
+  // Refs for animations
+  const headerRef = useRef<HTMLDivElement>(null);
+  const questionCardRef = useRef<HTMLDivElement>(null);
+  const progressBarRef = useRef<HTMLDivElement>(null);
+  const inputSectionRef = useRef<HTMLDivElement>(null);
   
   // Select 15 questions: 5 from each difficulty level
   const getSelectedQuestions = () => {
@@ -72,6 +79,38 @@ const TestComponent: React.FC = () => {
     setIsMobile(isMobilePlatform());
   }, []);
 
+  // Entrance animations
+  useEffect(() => {
+    const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
+    
+    tl.fromTo(headerRef.current, 
+      { y: -20, opacity: 0 }, 
+      { y: 0, opacity: 1, duration: 0.4 }
+    )
+    .fromTo(progressBarRef.current, 
+      { scaleX: 0, opacity: 0 }, 
+      { scaleX: 1, opacity: 1, duration: 0.5, ease: "power2.out" }, "-=0.2"
+    )
+    .fromTo(questionCardRef.current, 
+      { y: 20, opacity: 0, scale: 0.98 }, 
+      { y: 0, opacity: 1, scale: 1, duration: 0.4, ease: "power2.out" }, "-=0.3"
+    )
+    .fromTo(inputSectionRef.current, 
+      { y: 20, opacity: 0 }, 
+      { y: 0, opacity: 1, duration: 0.3 }, "-=0.2"
+    );
+  }, []);
+
+  // Animate question changes
+  useEffect(() => {
+    if (questionCardRef.current) {
+      gsap.fromTo(questionCardRef.current, 
+        { x: -15, opacity: 0.9 }, 
+        { x: 0, opacity: 1, duration: 0.3, ease: "power2.out" }
+      );
+    }
+  }, [currentQuestionIndex]);
+
   // Auto-scroll to results when they arrive
   useEffect(() => {
     if (hasResponseArrived) {
@@ -84,6 +123,12 @@ const TestComponent: React.FC = () => {
             block: 'start',
             inline: 'nearest'
           })
+          
+          // Simple fade-in animation for results
+          gsap.fromTo(targetRef, 
+            { opacity: 0, y: 10 }, 
+            { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" }
+          )
         }, 100)
       }
     }
@@ -284,14 +329,14 @@ const TestComponent: React.FC = () => {
     <div className="h-screen p-4 sm:p-6 md:p-8 overflow-y-auto custom-scrollbar transition-colors duration-300" style={{ backgroundColor: backgroundColor }}>
       <div className="max-w-4xl mx-auto">
         {/* Progress Bar */}
-        <div className="mb-8">
+        <div ref={headerRef} className="mb-8">
           <div className="flex items-center justify-between mb-3">
             {/* Left: Back Button */}
             <div className="flex-shrink-0">
               <button
                 type="button"
                 onClick={handleBackClick}
-                className="inline-flex items-center px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors hover:shadow-sm"
+                className="inline-flex items-center px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors hover:shadow-sm hover:scale-105 active:scale-95"
                 style={{ borderColor: `${primaryColor}40`, color: primaryColor }}
                 aria-label="Go back"
                 title="Go back"
@@ -305,21 +350,21 @@ const TestComponent: React.FC = () => {
 
             {/* Center: Title */}
             <div className="flex-1 flex justify-center">
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold transition-colors duration-300" style={{ color: textColor }}>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold transition-colors duration-300 hover:scale-105" style={{ color: textColor }}>
               Interview Test
             </h1>
             </div>
 
             {/* Right: Page Indicator */}
             <div className="flex-shrink-0">
-            <span className="text-lg font-semibold" style={{ color: primaryColor }}>
+            <span className="text-lg font-semibold transition-all duration-200 hover:scale-110" style={{ color: primaryColor }}>
               {currentQuestionIndex + 1} / {allQuestions.length}
             </span>
             </div>
           </div>
           
           {/* Progress Bar */}
-          <div className="w-full bg-gray-200 rounded-full h-3 shadow-inner">
+          <div ref={progressBarRef} className="w-full bg-gray-200 rounded-full h-3 shadow-inner">
             <div 
               className="h-3 rounded-full transition-all duration-500 ease-out shadow-lg"
               style={{ 
@@ -331,7 +376,7 @@ const TestComponent: React.FC = () => {
         </div>
 
         {/* Question Card */}
-         <div className="rounded-2xl shadow-xl p-6 sm:p-8 md:p-10 mb-8 transition-colors duration-300" style={{ backgroundColor: cardColor }}>
+         <div ref={questionCardRef} className="rounded-2xl shadow-xl p-6 sm:p-8 md:p-10 mb-8 transition-all duration-300 hover:scale-105" style={{ backgroundColor: cardColor }}>
 
           {/* Question Header with Difficulty */}
           <div className="flex justify-between items-start mb-4">
@@ -349,12 +394,12 @@ const TestComponent: React.FC = () => {
           </div>
 
           {/* Answer Input */}
-          <div className="mb-4">
+          <div ref={inputSectionRef} className="mb-4">
             <div className='flex justify-between items-center mb-4'>
             <label className="block text-lg font-semibold mb-2" style={{ color: primaryColor }}>
               Your Answer:
             </label>
-            <button onClick={() => setShowRecordingModal(true)} className='py-2 px-4 text-sm rounded-lg' style={{ backgroundColor: primaryColor, color: 'white' }}>
+            <button onClick={() => setShowRecordingModal(true)} className='py-2 px-4 text-sm rounded-lg transition-all duration-200 hover:scale-105 active:scale-95' style={{ backgroundColor: primaryColor, color: 'white' }}>
              Record Answer  
             </button>
             </div>
@@ -362,7 +407,7 @@ const TestComponent: React.FC = () => {
               value={answer}
               onChange={(e) => setAnswer(e.target.value)}
               placeholder="Type your answer here..."
-              className="w-full p-4 border-2 rounded-xl text-lg resize-none focus:outline-none focus:ring-4 transition-all duration-300"
+              className="w-full p-4 border-2 rounded-xl text-lg resize-none focus:outline-none focus:ring-4 transition-all duration-300 hover:scale-105"
               style={{ 
                 borderColor: `${primaryColor}30`,
                 backgroundColor: `${primaryColor}05`,
@@ -386,7 +431,7 @@ const TestComponent: React.FC = () => {
             <button 
               onClick={handleSubmitText}
               disabled={!answer.trim() || isEvaluatingText}
-              className="flex-1 px-4 py-2 rounded-xl text-white font-semibold text-lg transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+              className="flex-1 px-4 py-2 rounded-xl text-white font-semibold text-lg transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
               style={{ 
                 backgroundColor: answer.trim() && !isEvaluatingText ? primaryColor : `${primaryColor}50`
               }}
@@ -447,7 +492,7 @@ const TestComponent: React.FC = () => {
 
         {/* Text Result Display */}
         {!isAudioResult && hasResponseArrived && testResult && (
-           <div ref={textResultRef} className='rounded-2xl shadow-xl p-4 sm:p-4 md:p-6 mb-8 transition-colors duration-300' style={{ backgroundColor: cardColor }}>
+           <div ref={textResultRef} className='rounded-2xl shadow-xl p-4 sm:p-4 md:p-6 mb-8 transition-all duration-300 hover:scale-105' style={{ backgroundColor: cardColor }}>
             <div className='flex items-center gap-3 mb-6'>
               <div className='w-12 h-12 rounded-full flex items-center justify-center' style={{ backgroundColor: `${primaryColor}15` }}>
                 <svg className='w-6 h-6' style={{ color: primaryColor }} fill='none' stroke='currentColor' viewBox='0 0 24 24'>

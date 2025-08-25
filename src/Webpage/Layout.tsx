@@ -4,6 +4,7 @@ import { useThemeStore } from '../zustand_store/theme_store';
 import { useAuthStore } from '../zustand_store/auth_store';
 import VersionService from '../services/versionService';
 import UpdateNotification from '../components/UpdateNotification';
+import { gsap } from 'gsap';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -26,6 +27,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const sidebarRef = useRef<HTMLDivElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
   const hamburgerRef = useRef<HTMLButtonElement>(null);
+  const navbarRef = useRef<HTMLElement>(null);
+  const logoRef = useRef<HTMLHeadingElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
 
   // Initialize VersionService
   useEffect(() => {
@@ -42,22 +46,83 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     document.documentElement.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
   }, [isDarkMode]);
 
+  // Entrance animations
+  useEffect(() => {
+    if (!navbarRef.current || !logoRef.current || !profileRef.current) return;
+    
+    const tl = gsap.timeline({ defaults: { ease: "power1.out" } });
+    
+    tl.fromTo(navbarRef.current, 
+      { y: -20, opacity: 0 }, 
+      { y: 0, opacity: 1, duration: 0.4 }
+    )
+    .fromTo(logoRef.current, 
+      { scale: 0.9, opacity: 0 }, 
+      { scale: 1, opacity: 1, duration: 0.3 }, "-=0.2"
+    )
+    .fromTo(profileRef.current, 
+      { scale: 0.9, opacity: 0 }, 
+      { scale: 1, opacity: 1, duration: 0.3 }, "-=0.2"
+    );
+  }, []);
+
   const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
+    if (!sidebarOpen) {
+      setSidebarOpen(true);
+      // Animate sidebar in
+      gsap.fromTo(sidebarRef.current, 
+        { x: -300, opacity: 0 }, 
+        { x: 0, opacity: 1, duration: 0.3, ease: "power2.out" }
+      );
+      gsap.fromTo(backdropRef.current, 
+        { opacity: 0 }, 
+        { opacity: 1, duration: 0.2, ease: "power2.out" }
+      );
+    } else {
+      // Animate sidebar out
+      gsap.to(sidebarRef.current, 
+        { x: -300, opacity: 0, duration: 0.2, ease: "power2.in" }
+      );
+      gsap.to(backdropRef.current, 
+        { opacity: 0, duration: 0.15, ease: "power2.in" }
+      );
+      setSidebarOpen(false);
+    }
   };
 
   const handleNavigation = (path: string) => {
-    navigate(path);
+    // Animate out before navigation
+    gsap.to(sidebarRef.current, 
+      { x: -300, opacity: 0, duration: 0.15, ease: "power2.in" }
+    );
+    gsap.to(backdropRef.current, 
+      { opacity: 0, duration: 0.1, ease: "power2.in" }
+    );
     setSidebarOpen(false);
+    navigate(path);
   };
 
   const handleLogout = () => {
+    // Animate out before logout
+    gsap.to(sidebarRef.current, 
+      { x: -300, opacity: 0, duration: 0.15, ease: "power2.in" }
+    );
+    gsap.to(backdropRef.current, 
+      { opacity: 0, duration: 0.1, ease: "power2.in" }
+    );
+    setSidebarOpen(false);
     logout();
     navigate('/login');
-    setSidebarOpen(false);
   };
 
   const closeSidebar = () => {
+    // Animate sidebar out
+    gsap.to(sidebarRef.current, 
+      { x: -300, opacity: 0, duration: 0.2, ease: "power2.in" }
+    );
+    gsap.to(backdropRef.current, 
+      { opacity: 0, duration: 0.15, ease: "power2.in" }
+    );
     setSidebarOpen(false);
   };
 
@@ -68,6 +133,14 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return location.pathname.startsWith(path);
   };
 
+  // Animate theme toggle
+  const handleThemeToggle = () => {
+    gsap.to(document.documentElement, 
+      { duration: 0.3, ease: "power2.out" }
+    );
+    toggleDarkMode();
+  };
+
   return (
     <div 
       className="flex flex-col h-screen overflow-hidden transition-colors duration-300"
@@ -75,6 +148,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     >
       {/* Top Navbar */}
       <nav 
+        ref={navbarRef}
         className="flex items-center justify-between px-4 sm:px-6 md:px-6 lg:px-8 py-3 md:py-3 lg:py-4 shadow-sm flex-shrink-0 transition-colors duration-300"
         style={{ 
           backgroundColor: surfaceColor, 
@@ -86,7 +160,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <button
           ref={hamburgerRef}
           onClick={toggleSidebar}
-          className="p-2 md:p-2 rounded-lg transition-colors duration-200"
+          className="p-2 md:p-2 rounded-lg transition-colors duration-200 hover:scale-105 active:scale-95"
           style={{ 
             color: textColor,
             backgroundColor: 'transparent'
@@ -105,16 +179,23 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
         {/* Center: App Logo/Title */}
         <div className="flex items-center">
-          <h1 className="text-xl md:text-xl lg:text-2xl font-bold" style={{ color: primaryColor }}>
+          <h1 
+            ref={logoRef}
+            className="text-xl md:text-xl lg:text-2xl font-bold hover:scale-105 transition-transform duration-200" 
+            style={{ color: primaryColor }}
+          >
             PrepMaster
           </h1>
-        </div>
+      </div>
 
         {/* Right: Profile Photo */}
-        <div className="flex items-center space-x-3 md:space-x-3">
+        <div 
+          ref={profileRef}
+          className="flex items-center space-x-3 md:space-x-3"
+        >
           <button 
             onClick={() => navigate('/dashboard')}
-            className="p-1 md:p-1 rounded-full transition-colors duration-200"
+            className="p-1 md:p-1 rounded-full transition-all duration-200 hover:scale-110 active:scale-95"
             style={{ 
               backgroundColor: 'transparent'
             }}
@@ -149,20 +230,18 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       {/* Sidebar Navigation */}
       {sidebarOpen && (
         <>
-          {/* Backdrop */}
-          <div
-            ref={backdropRef}
+                     {/* Backdrop */}
+           <div
+             ref={backdropRef}
             className="fixed inset-0 z-40 transition-opacity duration-300 ease-in-out"
             style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
-            onClick={closeSidebar}
-          />
+             onClick={closeSidebar}
+           />
           
           {/* Sidebar */}
           <div
             ref={sidebarRef}
-            className={`fixed left-0 top-0 h-full w-64 shadow-2xl z-50 transform transition-all duration-300 ease-in-out overflow-y-auto ${
-              sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-            }`}
+            className="fixed left-0 top-0 h-full w-64 shadow-2xl z-50 overflow-y-auto"
             style={{ 
               backgroundColor: surfaceColor,
               borderRight: `1px solid ${borderColor}`
@@ -174,9 +253,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 <h2 className="text-xl font-bold" style={{ color: primaryColor }}>
                   Menu
                 </h2>
-                <button
-                  onClick={closeSidebar}
-                  className="p-2 rounded-lg transition-colors duration-200"
+                                 <button
+                   onClick={closeSidebar}
+                  className="p-2 rounded-lg transition-all duration-200 hover:scale-105 active:scale-95"
                   style={{ 
                     color: textColor,
                     backgroundColor: 'transparent'
@@ -195,7 +274,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               </div>
 
               {/* Dark Mode Toggle */}
-              <div className="mb-6 p-4 rounded-lg" style={{ backgroundColor: isDarkMode ? '#334155' : '#f8fafc' }}>
+              <div className="mb-6 p-4 rounded-lg transition-all duration-200 hover:scale-105" style={{ backgroundColor: isDarkMode ? '#334155' : '#f8fafc' }}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <div className="w-5 h-5">
@@ -214,13 +293,13 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     </span>
                   </div>
                   <button
-                    onClick={toggleDarkMode}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${
+                    onClick={handleThemeToggle}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-300 ease-in-out hover:scale-105 ${
                       isDarkMode ? 'bg-blue-600' : 'bg-gray-200'
                     }`}
                   >
                     <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-all duration-300 ease-in-out ${
                         isDarkMode ? 'translate-x-6' : 'translate-x-1'
                       }`}
                     />
@@ -231,42 +310,42 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               {/* Navigation Links */}
               <div className="space-y-2">
                 {/* Dashboard */}
-                <button
-                  onClick={() => handleNavigation('/')}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                    isActiveRoute('/') ? 'text-white shadow-lg' : 'hover:bg-opacity-80'
-                  }`}
-                  style={{
-                    backgroundColor: isActiveRoute('/') ? primaryColor : 'transparent',
-                    color: isActiveRoute('/') ? 'white' : textColor
+          <button
+            onClick={() => handleNavigation('/dashboard')}
+                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 hover:scale-105 active:scale-95 ${
+                    isActiveRoute('/dashboard') ? 'text-white shadow-lg' : 'hover:bg-opacity-80'
+            }`}
+            style={{
+              backgroundColor: isActiveRoute('/dashboard') ? primaryColor : 'transparent',
+                    color: isActiveRoute('/dashboard') ? 'white' : textColor
                   }}
                   onMouseEnter={(e) => {
-                    if (!isActiveRoute('/')) {
+                    if (!isActiveRoute('/dashboard')) {
                       e.currentTarget.style.backgroundColor = hoverColor;
                     }
                   }}
                   onMouseLeave={(e) => {
-                    if (!isActiveRoute('/')) {
+                    if (!isActiveRoute('/dashboard')) {
                       e.currentTarget.style.backgroundColor = 'transparent';
                     }
-                  }}
-                >
+            }}
+          >
                   <div className="w-5 h-5">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                  </div>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+            </div>
                   <span className="font-medium">Dashboard</span>
-                </button>
+          </button>
 
                 {/* Practice Interview */}
-                <button
-                  onClick={() => handleNavigation('/practice')}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+          <button
+            onClick={() => handleNavigation('/practice')}
+                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 hover:scale-105 active:scale-95 ${
                     isActiveRoute('/practice') ? 'text-white shadow-lg' : 'hover:bg-opacity-80'
-                  }`}
-                  style={{
-                    backgroundColor: isActiveRoute('/practice') ? primaryColor : 'transparent',
+            }`}
+            style={{
+              backgroundColor: isActiveRoute('/practice') ? primaryColor : 'transparent',
                     color: isActiveRoute('/practice') ? 'white' : textColor
                   }}
                   onMouseEnter={(e) => {
@@ -278,22 +357,22 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     if (!isActiveRoute('/practice')) {
                       e.currentTarget.style.backgroundColor = 'transparent';
                     }
-                  }}
-                >
+            }}
+          >
                   <div className="w-5 h-5">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
                   <span className="font-medium">Practice Interview</span>
                 </button>
 
                 {/* Test Component */}
-                <button
-                  onClick={() => handleNavigation('/test')}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                                 <button
+                   onClick={() => handleNavigation('/test')}
+                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 hover:scale-105 active:scale-95 ${
                     isActiveRoute('/test') ? 'text-white shadow-lg' : 'hover:bg-opacity-80'
-                  }`}
+                   }`}
                   style={{
                     backgroundColor: isActiveRoute('/test') ? primaryColor : 'transparent',
                     color: isActiveRoute('/test') ? 'white' : textColor
@@ -326,7 +405,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 {/* Ask AI */}
                 <button
                   onClick={() => handleNavigation('/ask-ai')}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 hover:scale-105 active:scale-95 ${
                     isActiveRoute('/ask-ai') ? 'text-white shadow-lg' : 'hover:bg-opacity-80'
                   }`}
                   style={{
@@ -351,7 +430,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   </div>
                   <span className="font-medium">Ask AI</span>
                 </button>
-              </div>
+                  </div>
 
               {/* Spacer to push logout button to bottom */}
               <div className="flex-1"></div>
@@ -360,7 +439,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               <div className="pt-4 border-t" style={{ borderColor: borderColor }}>
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 hover:bg-opacity-80"
+                  className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 hover:bg-opacity-80 hover:scale-105 active:scale-95"
                   style={{
                     backgroundColor: 'transparent',
                     color: textColor
@@ -378,9 +457,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     </svg>
                   </div>
                   <span className="font-medium">Logout</span>
-                </button>
-              </div>
-            </div>
+          </button>
+        </div>
+      </div>
           </div>
         </>
       )}

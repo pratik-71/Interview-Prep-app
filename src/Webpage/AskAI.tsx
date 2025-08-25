@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useThemeStore } from '../zustand_store/theme_store';
 import GeminiService from '../services/geminiService';
+import { gsap } from 'gsap';
 
 const AskAI: React.FC = () => {
 	const { 
@@ -18,6 +19,65 @@ const AskAI: React.FC = () => {
 	const [isLoading, setIsLoading] = useState(false);
 	const [messages, setMessages] = useState<{ role: 'user' | 'ai'; content: string }[]>([]);
 	const endRef = useRef<HTMLDivElement>(null);
+	
+	// Refs for animations
+	const headerRef = useRef<HTMLDivElement>(null);
+	const messagesContainerRef = useRef<HTMLDivElement>(null);
+	const inputSectionRef = useRef<HTMLDivElement>(null);
+	const quickPromptsRef = useRef<HTMLDivElement>(null);
+
+	// Entrance animations
+	useEffect(() => {
+		const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
+		
+		tl.fromTo(headerRef.current, 
+			{ y: -20, opacity: 0 }, 
+			{ y: 0, opacity: 1, duration: 0.4 }
+		)
+		.fromTo(messagesContainerRef.current, 
+			{ y: 20, opacity: 0 }, 
+			{ y: 0, opacity: 1, duration: 0.4 }, "-=0.2"
+		)
+		.fromTo(inputSectionRef.current, 
+			{ y: 20, opacity: 0 }, 
+			{ y: 0, opacity: 1, duration: 0.4 }, "-=0.2"
+		);
+		
+		// Animate quick prompts with shorter stagger
+		if (quickPromptsRef.current) {
+			const children = Array.from(quickPromptsRef.current.children);
+			gsap.fromTo(children, 
+				{ y: 15, opacity: 0, scale: 0.95 }, 
+				{ y: 0, opacity: 1, scale: 1, duration: 0.3, stagger: 0.05, ease: "power2.out" }
+			);
+		}
+	}, []);
+
+	// Animate new messages
+	useEffect(() => {
+		if (messages.length > 0 && messagesContainerRef.current) {
+			const lastMessage = messagesContainerRef.current.querySelector('.message-item:last-child');
+			if (lastMessage) {
+				gsap.fromTo(lastMessage, 
+					{ scale: 0.95, opacity: 0 }, 
+					{ scale: 1, opacity: 1, duration: 0.3, ease: "power2.out" }
+				);
+			}
+		}
+	}, [messages]);
+
+	// Animate loading state
+	useEffect(() => {
+		if (isLoading && messagesContainerRef.current) {
+			const loadingIndicator = messagesContainerRef.current.querySelector('.loading-indicator');
+			if (loadingIndicator) {
+				gsap.fromTo(loadingIndicator, 
+					{ scale: 0.8, opacity: 0 }, 
+					{ scale: 1, opacity: 1, duration: 0.2, ease: "power2.out" }
+				);
+			}
+		}
+	}, [isLoading]);
 
 	useEffect(() => {
 		endRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -52,21 +112,34 @@ const AskAI: React.FC = () => {
 		'Explain async/await'
 	];
 
+	const handleQuickPromptClick = (prompt: string) => {
+		// Animate the button click
+		const button = document.querySelector(`[data-prompt="${prompt}"]`);
+		if (button) {
+			gsap.to(button, { scale: 0.95, duration: 0.1, yoyo: true, repeat: 1 });
+		}
+		setQuestion(prompt);
+	};
+
 	return (
 		<div className="flex flex-col transition-colors duration-300 h-full" 
 		     style={{ backgroundColor: backgroundColor }}>
 			
 			{/* Header Section - Fixed */}
-			<div className="flex-shrink-0 px-4 sm:px-6 py-6 sm:py-8 text-center" style={{ backgroundColor: surfaceColor }}>
+			<div 
+				ref={headerRef}
+				className="flex-shrink-0 px-4 sm:px-6 py-6 sm:py-8 text-center" 
+				style={{ backgroundColor: surfaceColor }}
+			>
 				<div className="max-w-2xl mx-auto">
 					<div className="flex items-center justify-center space-x-3 sm:space-x-4">
-						<div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center" 
+						<div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110" 
 						     style={{ backgroundColor: `${primaryColor}15` }}>
 							<svg className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7" style={{ color: primaryColor }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
 								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
 							</svg>
 						</div>
-						<h1 className="text-lg sm:text-xl md:text-2xl font-bold transition-colors duration-300" style={{ color: textColor }}>
+						<h1 className="text-lg sm:text-xl md:text-2xl font-bold transition-all duration-200 hover:scale-105" style={{ color: textColor }}>
 							Ask AI
 						</h1>
 					</div>
@@ -74,15 +147,21 @@ const AskAI: React.FC = () => {
 			</div>
 
 			{/* Messages Container - Scrollable with proper height */}
-			<div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 lg:px-8 custom-scrollbar">
+			<div 
+				ref={messagesContainerRef}
+				className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 lg:px-8 custom-scrollbar"
+			>
 				<div className="max-w-4xl mx-auto py-6">
 					{/* Messages */}
 					<div className="space-y-6">
 						{messages.map((message, index) => (
-							<div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+							<div 
+								key={index} 
+								className={`flex message-item ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+							>
 								<div className={`max-w-[85%] lg:max-w-[70%] xl:max-w-[65%]`}>
 									<div
-										className={`rounded-2xl px-6 py-4 shadow-sm transition-all duration-300 ${
+										className={`rounded-2xl px-6 py-4 shadow-sm transition-all duration-300 hover:scale-105 ${
 											message.role === 'user' 
 												? 'ml-auto' 
 												: 'mr-auto'
@@ -94,7 +173,7 @@ const AskAI: React.FC = () => {
 										}}
 									>
 										<div className="flex items-start space-x-3">
-											<div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+											<div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200 hover:scale-110 ${
 												message.role === 'user' ? 'bg-white bg-opacity-20' : `${primaryColor}15`
 											}`}>
 												{message.role === 'user' ? (
@@ -121,7 +200,7 @@ const AskAI: React.FC = () => {
 
 						{/* Loading Indicator */}
 						{isLoading && (
-							<div className="flex justify-start">
+							<div className="flex justify-start loading-indicator">
 								<div className="max-w-[85%] lg:max-w-[70%] xl:max-w-[65%]">
 									<div className="rounded-2xl px-6 py-4 shadow-sm border transition-colors duration-300" 
 									     style={{ backgroundColor: cardColor, borderColor: borderColor }}>
@@ -153,18 +232,23 @@ const AskAI: React.FC = () => {
 			</div>
 
 			{/* Input Section - Fixed at Bottom */}
-			<div className="flex-shrink-0 px-4 sm:px-6 lg:px-8 py-6" style={{ backgroundColor: surfaceColor }}>
+			<div 
+				ref={inputSectionRef}
+				className="flex-shrink-0 px-4 sm:px-6 lg:px-8 py-6" 
+				style={{ backgroundColor: surfaceColor }}
+			>
 				<div className="max-w-4xl mx-auto">
 					{/* Quick Prompts */}
 					{messages.length === 0 && (
-						<div className="mb-6">
+						<div className="mb-6" ref={quickPromptsRef}>
 							<div className="flex flex-wrap justify-center gap-3">
 								{quickPrompts.map((prompt, index) => (
 									<button
 										key={index}
+										data-prompt={prompt}
 										type="button"
-										onClick={() => setQuestion(prompt)}
-										className="px-4 py-2 rounded-full text-sm border transition-all duration-200 hover:scale-105"
+										onClick={() => handleQuickPromptClick(prompt)}
+										className="px-4 py-2 rounded-full text-sm border transition-all duration-200 hover:scale-105 active:scale-95"
 										style={{ 
 											borderColor: `${primaryColor}30`, 
 											color: textSecondaryColor, 
@@ -193,7 +277,7 @@ const AskAI: React.FC = () => {
 								<textarea
 									value={question}
 									onChange={(e) => setQuestion(e.target.value)}
-									className="w-full border rounded-2xl px-6 py-4 text-base focus:outline-none focus:ring-2 transition-all duration-300 resize-none"
+									className="w-full border rounded-2xl px-6 py-4 text-base focus:outline-none focus:ring-2 transition-all duration-300 resize-none hover:scale-105"
 									style={{ 
 										minHeight: '56px',
 										maxHeight: '120px',
@@ -204,12 +288,18 @@ const AskAI: React.FC = () => {
 									rows={1}
 									placeholder="Ask me anything..."
 									onFocus={(e) => {
-										e.currentTarget.style.backgroundColor = primaryColor;
-										e.currentTarget.style.boxShadow = `0 0 0 3px ${primaryColor}20`;
+										gsap.to(e.currentTarget, { 
+											backgroundColor: primaryColor, 
+											boxShadow: `0 0 0 3px ${primaryColor}20`,
+											duration: 0.2 
+										});
 									}}
 									onBlur={(e) => {
-										e.currentTarget.style.backgroundColor = inputColor;
-										e.currentTarget.style.boxShadow = 'none';
+										gsap.to(e.currentTarget, { 
+											backgroundColor: inputColor, 
+											boxShadow: 'none',
+											duration: 0.2 
+										});
 									}}
 								/>
 							</div>
@@ -217,8 +307,18 @@ const AskAI: React.FC = () => {
 							<button
 								type="submit"
 								disabled={!question.trim() || isLoading}
-								className="shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 shadow-lg"
+								className="shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-110 active:scale-95 shadow-lg"
 								style={{ backgroundColor: primaryColor }}
+								onClick={() => {
+									if (question.trim() && !isLoading) {
+										gsap.to(document.querySelector('button[type="submit"]'), { 
+											scale: 0.95, 
+											duration: 0.1, 
+											yoyo: true, 
+											repeat: 1 
+										});
+									}
+								}}
 							>
 								{isLoading ? (
 									<svg className="w-5 h-5 text-white animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
