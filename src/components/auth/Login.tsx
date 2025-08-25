@@ -19,7 +19,6 @@ const Login: React.FC = () => {
     textColor, 
     textSecondaryColor,
     borderColor,
-    cardColor,
     inputColor
   } = useThemeStore();
 

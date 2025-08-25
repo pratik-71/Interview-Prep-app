@@ -20,7 +20,6 @@ const Register: React.FC = () => {
     textColor, 
     textSecondaryColor,
     borderColor,
-    cardColor,
     inputColor
   } = useThemeStore();
 

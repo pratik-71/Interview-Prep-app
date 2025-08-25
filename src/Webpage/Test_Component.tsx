@@ -60,12 +60,10 @@ const TestComponent: React.FC = () => {
    const { 
      primaryColor, 
      backgroundColor, 
-     surfaceColor, 
      textColor, 
      textSecondaryColor,
      borderColor,
      cardColor,
-     inputColor,
      hoverColor
    } = useThemeStore()
 
@@ -906,7 +904,7 @@ const TestComponent: React.FC = () => {
 export default TestComponent
 
 const RecordAnswer = ({setAnswer, setShowRecordingModal, handleSubmitAudio, currentQuestion, setAudioResult, setIsAudioResult, currentQuestionIndex, updateQuestionMarks}: {setAnswer: (answer: string) => void, setShowRecordingModal: (show: boolean) => void, handleSubmitAudio: () => void, currentQuestion: string, setAudioResult: (result: AudioAnswerEvaluation | null) => void, setIsAudioResult: (isAudio: boolean) => void, currentQuestionIndex: number, updateQuestionMarks: (questionIndex: number, marks: number, result: AnswerEvaluation | AudioAnswerEvaluation) => void}) => {
-  const { primaryColor, textColor, textSecondaryColor, cardColor, hoverColor } = useThemeStore()
+  const { primaryColor, textColor, cardColor, hoverColor } = useThemeStore()
   const [isRecording, setIsRecording] = useState(false)
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
   const [audioUrl, setAudioUrl] = useState<string>('')

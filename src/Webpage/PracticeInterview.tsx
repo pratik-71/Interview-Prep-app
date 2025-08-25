@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useThemeStore } from '../zustand_store/theme_store';
 import { useQuestionsStore } from '../zustand_store/questions_store';
 import GeminiService from '../services/geminiService';
 import LoadingQuestions from './LoadingQuestions';
 import { sampleQuestions } from '../data/sampleQuestions';
-import { isMobilePlatform } from '../utils/mobileDetection';
 
 interface TechOption {
   id: string;
@@ -17,7 +16,6 @@ interface TechOption {
 const PracticeInterview: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedTech, setSelectedTech] = useState<string>('');
-  const [isMobile, setIsMobile] = useState(false);
   
   const navigate = useNavigate();
   const { 
@@ -26,15 +24,11 @@ const PracticeInterview: React.FC = () => {
     surfaceColor, 
     textColor, 
     textSecondaryColor,
-    borderColor,
-    cardColor
+    borderColor
   } = useThemeStore();
   const { setQuestions } = useQuestionsStore();
 
-  // Detect mobile platform
-  useEffect(() => {
-    setIsMobile(isMobilePlatform());
-  }, []);
+  // Mobile platform detection removed as not needed
 
   const techOptions: TechOption[] = [
     {

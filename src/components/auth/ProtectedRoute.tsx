@@ -12,7 +12,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   fallback
 }): React.ReactElement => {
   const { isAuthenticated, isLoading, checkAuth } = useAuthStore();
-  const { primaryColor, backgroundColor, surfaceColor, textColor, cardColor, borderColor } = useThemeStore();
+  const { primaryColor, backgroundColor, textColor, cardColor, borderColor } = useThemeStore();
 
   useEffect(() => {
     checkAuth();

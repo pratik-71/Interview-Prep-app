@@ -9,11 +9,8 @@ const NotFound: React.FC = () => {
   const { 
     primaryColor, 
     backgroundColor, 
-    surfaceColor, 
     textColor, 
-    textSecondaryColor,
-    borderColor,
-    cardColor
+    textSecondaryColor
   } = useThemeStore();
 
   // Detect mobile platform

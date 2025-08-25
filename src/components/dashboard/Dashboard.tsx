@@ -6,15 +6,14 @@ import { useThemeStore } from '../../zustand_store/theme_store';
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const { 
+    const { 
     primaryColor, 
     backgroundColor, 
     surfaceColor, 
     textColor, 
-    textSecondaryColor, 
+    textSecondaryColor,
     cardColor,
-    borderColor,
-    hoverColor
+    borderColor
   } = useThemeStore();
 
   const handleStartPractice = () => {
