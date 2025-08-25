@@ -148,7 +148,7 @@ const Dashboard: React.FC = () => {
             <h3 className="text-xl font-bold mb-2 transition-colors duration-300" style={{ color: textColor }}>
               Mock Interviews
             </h3>
-            <p className="text-lg text-gray-600 mb-4 transition-colors duration-300" style={{ color: textSecondaryColor }}>
+            <p className="text-lg mb-4 transition-colors duration-300" style={{ color: textSecondaryColor }}>
               Take full mock interviews to test your skills in a realistic environment with time constraints.
             </p>
             <button className="mt-auto w-full py-3 px-4 rounded-lg text-sm font-medium text-white transition-all duration-200 hover:shadow-lg transform hover:-translate-y-0.5" style={{ backgroundColor: primaryColor }}>
@@ -171,7 +171,7 @@ const Dashboard: React.FC = () => {
             <h3 className="text-xl font-bold mb-2 transition-colors duration-300" style={{ color: textColor }}>
               Progress Tracking
             </h3>
-            <p className="text-gray-600 mb-4 transition-colors duration-300" style={{ color: textSecondaryColor }}>
+            <p className="mb-4 transition-colors duration-300" style={{ color: textSecondaryColor }}>
               Monitor your improvement over time with detailed analytics and performance insights.
             </p>
             <button className="mt-auto w-full py-3 px-4 rounded-lg text-sm font-medium text-white transition-all duration-200 hover:shadow-lg transform hover:-translate-y-0.5" style={{ backgroundColor: primaryColor }}>
@@ -198,8 +198,8 @@ const Dashboard: React.FC = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <p className="text-gray-500 transition-colors duration-300" style={{ color: textSecondaryColor }}>No recent activity</p>
-              <p className="text-sm text-gray-400 mt-1 transition-colors duration-300" style={{ color: textSecondaryColor }}>Start practicing to see your progress here</p>
+              <p className="transition-colors duration-300" style={{ color: textSecondaryColor }}>No recent activity</p>
+              <p className="text-sm mt-1 transition-colors duration-300" style={{ color: textSecondaryColor }}>Start practicing to see your progress here</p>
             </div>
           </div>
         </div>

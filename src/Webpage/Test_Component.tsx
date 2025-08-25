@@ -692,9 +692,10 @@ const TestComponent: React.FC = () => {
                           const isAnswered = marks !== undefined
                           
                           return (
-                            <div key={index} className={`p-4 rounded-xl border-2 ${
-                              isAnswered ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'
-                            }`}>
+                            <div key={index} className="p-4 rounded-xl border-2 transition-colors duration-300" style={{
+                              borderColor: isAnswered ? '#10b981' : borderColor,
+                              backgroundColor: isAnswered ? `${primaryColor}10` : cardColor
+                            }}>
                               <div className="flex items-center justify-between">
                                 <div className="flex-1">
                                   <div className="flex items-center gap-3 mb-2">
@@ -1163,7 +1164,7 @@ const RecordAnswer = ({setAnswer, setShowRecordingModal, handleSubmitAudio, curr
               className='w-full flex items-center justify-center space-x-3 py-4 px-6 rounded-xl text-white font-medium transition-all duration-200 hover:scale-105 shadow-lg'
               style={{ backgroundColor: '#ef4444' }}
             >
-              <div className='w-4 h-4 rounded-full bg-white animate-pulse'></div>
+                              <div className='w-4 h-4 rounded-full animate-pulse' style={{ backgroundColor: cardColor }}></div>
               <span className='text-lg'>Stop Recording</span>
             </button>
           )}
