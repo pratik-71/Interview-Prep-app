@@ -7,11 +7,9 @@ const UpdateNotification: React.FC = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const { 
     primaryColor, 
-    backgroundColor, 
     surfaceColor, 
     textColor, 
     textSecondaryColor,
-    borderColor,
     warningColor
   } = useThemeStore();
 

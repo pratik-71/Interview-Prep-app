@@ -16,9 +16,7 @@ const QuestionsDisplay: React.FC = () => {
     backgroundColor, 
     surfaceColor, 
     textColor, 
-    textSecondaryColor,
-    borderColor,
-    cardColor
+    textSecondaryColor
   } = useThemeStore();
 
   // Detect mobile platform

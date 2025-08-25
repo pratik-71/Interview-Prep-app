@@ -13,10 +13,8 @@ const LoadingQuestions: React.FC<LoadingQuestionsProps> = ({ field, subfield, on
   const { 
     primaryColor, 
     backgroundColor, 
-    surfaceColor, 
     textColor, 
-    textSecondaryColor,
-    borderColor
+    textSecondaryColor
   } = useThemeStore();
 
   // Detect mobile platform
