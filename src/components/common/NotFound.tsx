@@ -6,7 +6,15 @@ import { isMobilePlatform } from '../../utils/mobileDetection';
 const NotFound: React.FC = () => {
   const [isMobile, setIsMobile] = useState(false);
   const navigate = useNavigate();
-  const { primaryColor, secondaryColor, tertiaryColor } = useThemeStore();
+  const { 
+    primaryColor, 
+    backgroundColor, 
+    surfaceColor, 
+    textColor, 
+    textSecondaryColor,
+    borderColor,
+    cardColor
+  } = useThemeStore();
 
   // Detect mobile platform
   useEffect(() => {
@@ -27,11 +35,17 @@ const NotFound: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: secondaryColor }}>
+    <div 
+      className="min-h-screen flex items-center justify-center transition-colors duration-300" 
+      style={{ backgroundColor: backgroundColor }}
+    >
       <div className="max-w-md mx-auto text-center px-6">
         {/* 404 Icon */}
         <div className="mb-8">
-          <div className="inline-flex items-center justify-center w-24 h-24 rounded-full mb-6" style={{ backgroundColor: `${primaryColor}15` }}>
+          <div 
+            className="inline-flex items-center justify-center w-24 h-24 rounded-full mb-6 transition-colors duration-300" 
+            style={{ backgroundColor: `${primaryColor}15` }}
+          >
             <svg className="w-12 h-12" style={{ color: primaryColor }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
             </svg>
@@ -39,13 +53,13 @@ const NotFound: React.FC = () => {
         </div>
 
         {/* Error Message */}
-        <h1 className="text-5xl md:text-5xl lg:text-6xl font-bold mb-4" style={{ color: primaryColor }}>
+        <h1 className="text-5xl md:text-5xl lg:text-6xl font-bold mb-4 transition-colors duration-300" style={{ color: primaryColor }}>
           404
         </h1>
-        <h2 className="text-xl md:text-2xl font-bold mb-4" style={{ color: tertiaryColor }}>
+        <h2 className="text-xl md:text-2xl font-bold mb-4 transition-colors duration-300" style={{ color: textColor }}>
           Page Not Found
         </h2>
-        <p className="text-base md:text-lg mb-8" style={{ color: `${tertiaryColor}80` }}>
+        <p className="text-base md:text-lg mb-8 transition-colors duration-300" style={{ color: textSecondaryColor }}>
           Oops! The page you're looking for doesn't exist. It might have been moved, deleted, or you entered the wrong URL.
         </p>
 
@@ -83,8 +97,11 @@ const NotFound: React.FC = () => {
         </div>
 
         {/* Help Text */}
-        <div className="mt-8 p-4 rounded-lg" style={{ backgroundColor: `${primaryColor}08` }}>
-          <p className="text-sm" style={{ color: `${tertiaryColor}70` }}>
+        <div 
+          className="mt-8 p-4 rounded-lg transition-colors duration-300" 
+          style={{ backgroundColor: `${primaryColor}08` }}
+        >
+          <p className="text-sm transition-colors duration-300" style={{ color: textSecondaryColor }}>
             Need help? Check the navigation menu or contact support.
           </p>
         </div>

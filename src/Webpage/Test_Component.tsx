@@ -57,7 +57,17 @@ const TestComponent: React.FC = () => {
   const audioResultRef = useRef<HTMLDivElement>(null)
   
   // Get colors from theme store
-  const { primaryColor, secondaryColor, tertiaryColor } = useThemeStore()
+   const { 
+     primaryColor, 
+     backgroundColor, 
+     surfaceColor, 
+     textColor, 
+     textSecondaryColor,
+     borderColor,
+     cardColor,
+     inputColor,
+     hoverColor
+   } = useThemeStore()
 
   // Detect mobile platform
   useEffect(() => {
@@ -228,7 +238,7 @@ const TestComponent: React.FC = () => {
   // Check if we have questions and if current index is valid
   if (!allQuestions || !Array.isArray(allQuestions) || allQuestions.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: secondaryColor }}>
+      <div className="flex items-center justify-center min-h-screen transition-colors duration-300" style={{ backgroundColor: backgroundColor }}>
         <div className="text-center p-8">
           <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center" 
                style={{ backgroundColor: `${primaryColor}15` }}>
@@ -236,8 +246,8 @@ const TestComponent: React.FC = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold mb-4" style={{ color: tertiaryColor }}>No Questions Available</h2>
-          <p className="text-lg" style={{ color: `${tertiaryColor}80` }}>Please load some questions first</p>
+          <h2 className="text-2xl font-bold mb-4 transition-colors duration-300" style={{ color: textColor }}>No Questions Available</h2>
+          <p className="text-lg transition-colors duration-300" style={{ color: textSecondaryColor }}>Please load some questions first</p>
         </div>
       </div>
     )
@@ -245,7 +255,7 @@ const TestComponent: React.FC = () => {
 
   if (currentQuestionIndex >= allQuestions.length) {
     return (
-      <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: secondaryColor }}>
+      <div className="flex items-center justify-center min-h-screen transition-colors duration-300" style={{ backgroundColor: backgroundColor }}>
         <div className="text-center p-8">
           <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center" 
                style={{ backgroundColor: `${primaryColor}15` }}>
@@ -254,8 +264,8 @@ const TestComponent: React.FC = () => {
             </svg>
           </div>
 
-          <h2 className='text-2xl font-bold mb-4' style={{ color: tertiaryColor }}>Test Completed!</h2>
-          <p className="text-lg mb-6" style={{ color: `${tertiaryColor}80` }}>You've answered all the questions</p>
+          <h2 className='text-2xl font-bold mb-4 transition-colors duration-300' style={{ color: textColor }}>Test Completed!</h2>
+          <p className="text-lg mb-6 transition-colors duration-300" style={{ color: textSecondaryColor }}>You've answered all the questions</p>
 
           <button 
             onClick={() => setCurrentQuestionIndex(0)}
@@ -273,7 +283,7 @@ const TestComponent: React.FC = () => {
   const progressPercentage = ((currentQuestionIndex + 1) / allQuestions.length) * 100
 
   return (
-    <div className="h-screen p-4 sm:p-6 md:p-8 overflow-y-auto custom-scrollbar" style={{ backgroundColor: secondaryColor }}>
+    <div className="h-screen p-4 sm:p-6 md:p-8 overflow-y-auto custom-scrollbar transition-colors duration-300" style={{ backgroundColor: backgroundColor }}>
       <div className="max-w-4xl mx-auto">
         {/* Progress Bar */}
         <div className="mb-8">
@@ -297,7 +307,7 @@ const TestComponent: React.FC = () => {
 
             {/* Center: Title */}
             <div className="flex-1 flex justify-center">
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold" style={{ color: tertiaryColor }}>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold transition-colors duration-300" style={{ color: textColor }}>
               Interview Test
             </h1>
             </div>
@@ -323,12 +333,12 @@ const TestComponent: React.FC = () => {
         </div>
 
         {/* Question Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 md:p-10 mb-8">
+         <div className="rounded-2xl shadow-xl p-6 sm:p-8 md:p-10 mb-8 transition-colors duration-300" style={{ backgroundColor: cardColor }}>
 
           {/* Question Header with Difficulty */}
           <div className="flex justify-between items-start mb-4">
             <h2 className="text-xl sm:text-2xl md:text-3xl font-bold leading-relaxed flex-1" 
-                style={{ color: tertiaryColor }}>
+                style={{ color: textColor }}>
               {currentQuestion.question}
             </h2>
             <span className="ml-4 px-3 py-1 rounded-full text-sm font-semibold text-white capitalize"
@@ -358,7 +368,7 @@ const TestComponent: React.FC = () => {
               style={{ 
                 borderColor: `${primaryColor}30`,
                 backgroundColor: `${primaryColor}05`,
-                color: tertiaryColor,
+                color: textColor,
                 minHeight: '200px'
               }}
               onFocus={(e) => {
@@ -439,14 +449,14 @@ const TestComponent: React.FC = () => {
 
         {/* Text Result Display */}
         {!isAudioResult && hasResponseArrived && testResult && (
-          <div ref={textResultRef} className='bg-white rounded-2xl shadow-xl p-4 sm:p-4 md:p-6 mb-8'>
+           <div ref={textResultRef} className='rounded-2xl shadow-xl p-4 sm:p-4 md:p-6 mb-8 transition-colors duration-300' style={{ backgroundColor: cardColor }}>
             <div className='flex items-center gap-3 mb-6'>
               <div className='w-12 h-12 rounded-full flex items-center justify-center' style={{ backgroundColor: `${primaryColor}15` }}>
                 <svg className='w-6 h-6' style={{ color: primaryColor }} fill='none' stroke='currentColor' viewBox='0 0 24 24'>
                   <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' />
                 </svg>
               </div>
-              <h2 className='text-xl sm:text-2xl md:text-3xl font-bold' style={{ color: tertiaryColor }}>
+              <h2 className='text-xl sm:text-2xl md:text-3xl font-bold' style={{ color: textColor }}>
                 Text Answer Evaluation
               </h2>
             </div>
@@ -460,7 +470,7 @@ const TestComponent: React.FC = () => {
                       <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' />
                     </svg>
                   </div>
-                  <span className='text-lg font-semibold' style={{ color: tertiaryColor }}>Overall Score</span>
+                  <span className='text-lg font-semibold' style={{ color: textColor }}>Overall Score</span>
                 </div>
                 <div className='text-3xl font-bold' style={{ color: primaryColor }}>
                   {testResult.marks}/10
@@ -484,9 +494,9 @@ const TestComponent: React.FC = () => {
                       <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z' />
                     </svg>
                   </div>
-                  <span className='text-lg font-semibold' style={{ color: tertiaryColor }}>Feedback</span>
+                  <span className='text-lg font-semibold' style={{ color: textColor }}>Feedback</span>
                 </div>
-                <p className='text-base leading-relaxed' style={{ color: tertiaryColor }}>
+                <p className='text-base leading-relaxed' style={{ color: textColor }}>
                   {testResult.feedback}
                 </p>
               </div>
@@ -496,14 +506,14 @@ const TestComponent: React.FC = () => {
 
         {/* Audio Result Display */}
         {isAudioResult && hasResponseArrived && audioResult && (
-          <div ref={audioResultRef} className='bg-white rounded-2xl shadow-xl p-4 sm:p-4 md:p-6 mb-8'>
+           <div ref={audioResultRef} className='rounded-2xl shadow-xl p-4 sm:p-4 md:p-6 mb-8 transition-colors duration-300' style={{ backgroundColor: cardColor }}>
             <div className='flex items-center gap-3 mb-6'>
               <div className='w-12 h-12 rounded-full flex items-center justify-center' style={{ backgroundColor: `${primaryColor}15` }}>
                 <svg className='w-6 h-6' style={{ color: primaryColor }} fill='none' stroke='currentColor' viewBox='0 0 24 24'>
                   <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z' />
                 </svg>
               </div>
-              <h2 className='text-xl sm:text-2xl md:text-3xl font-bold' style={{ color: tertiaryColor }}>
+              <h2 className='text-xl sm:text-2xl md:text-3xl font-bold' style={{ color: textColor }}>
                 Audio Answer Evaluation
               </h2>
             </div>
@@ -514,7 +524,7 @@ const TestComponent: React.FC = () => {
                 <div className='text-2xl font-bold' style={{ color: primaryColor }}>
                   {audioResult.marks}/100
                 </div>
-                <div className='text-sm font-medium' style={{ color: tertiaryColor }}>Overall Score</div>
+                <div className='text-sm font-medium' style={{ color: textColor }}>Overall Score</div>
                 <div className='w-full bg-gray-200 rounded-full h-2 mt-2'>
                   <div 
                     className='h-2 rounded-full transition-all duration-500'
@@ -531,7 +541,7 @@ const TestComponent: React.FC = () => {
                 <div className='text-2xl font-bold' style={{ color: primaryColor }}>
                   {audioResult.confidence_marks}/100
                 </div>
-                <div className='text-sm font-medium' style={{ color: tertiaryColor }}>Confidence</div>
+                <div className='text-sm font-medium' style={{ color: textColor }}>Confidence</div>
                 <div className='w-full bg-gray-200 rounded-full h-2 mt-2'>
                   <div 
                     className='h-2 rounded-full transition-all duration-500'
@@ -548,7 +558,7 @@ const TestComponent: React.FC = () => {
                 <div className='text-2xl font-bold' style={{ color: primaryColor }}>
                   {audioResult.fluency_marks}/100
                 </div>
-                <div className='text-sm font-medium' style={{ color: tertiaryColor }}>Fluency</div>
+                <div className='text-sm font-medium' style={{ color: textColor }}>Fluency</div>
                 <div className='w-full bg-gray-200 rounded-full h-2 mt-2'>
                   <div 
                     className='h-2 rounded-full transition-all duration-500'
@@ -569,9 +579,9 @@ const TestComponent: React.FC = () => {
                     <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M8 12h.01M12 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z' />
                   </svg>
                 </div>
-                <span className='text-lg font-semibold' style={{ color: tertiaryColor }}>Detailed Feedback</span>
+                <span className='text-lg font-semibold' style={{ color: textColor }}>Detailed Feedback</span>
               </div>
-              <p className='text-base leading-relaxed' style={{ color: tertiaryColor }}>
+              <p className='text-base leading-relaxed' style={{ color: textColor }}>
                 {audioResult.feedback}
               </p>
             </div>
@@ -606,7 +616,7 @@ const TestComponent: React.FC = () => {
       {/* Final Results Modal */}
       {showFinalResults && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+           <div className="rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto transition-colors duration-300" style={{ backgroundColor: cardColor }}>
             <div className="p-8">
               {/* Header */}
               <div className="text-center mb-8">
@@ -615,10 +625,10 @@ const TestComponent: React.FC = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <h2 className="text-3xl font-bold mb-2" style={{ color: tertiaryColor }}>
+                <h2 className="text-3xl font-bold mb-2" style={{ color: textColor }}>
                   Test Results
                 </h2>
-                <p className="text-lg" style={{ color: `${tertiaryColor}80` }}>
+                                 <p className="text-lg" style={{ color: `${textSecondaryColor}80` }}>
                   Here's how you performed in your interview test
                 </p>
               </div>
@@ -635,7 +645,7 @@ const TestComponent: React.FC = () => {
                       <div className="text-4xl font-bold mb-2" style={{ color: primaryColor }}>
                         {results.totalMarks}/{results.maxPossibleMarks}
                       </div>
-                      <div className="text-xl font-semibold mb-2" style={{ color: tertiaryColor }}>
+                                             <div className="text-xl font-semibold mb-2" style={{ color: textColor }}>
                         {results.percentage.toFixed(1)}%
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-3">
@@ -647,7 +657,7 @@ const TestComponent: React.FC = () => {
                           }}
                         />
                       </div>
-                      <div className="text-sm mt-2" style={{ color: `${tertiaryColor}70` }}>
+                                             <div className="text-sm mt-2" style={{ color: `${textSecondaryColor}70` }}>
                         {results.answeredQuestions} out of {results.totalQuestions} questions answered
                       </div>
                     </div>
@@ -657,13 +667,13 @@ const TestComponent: React.FC = () => {
                       {Object.entries(results.difficultyBreakdown).map(([difficulty, stats]) => (
                         stats.count > 0 && (
                           <div key={difficulty} className="p-4 rounded-xl text-center" style={{ backgroundColor: `${primaryColor}05` }}>
-                            <div className="text-lg font-semibold mb-2 capitalize" style={{ color: tertiaryColor }}>
+                            <div className="text-lg font-semibold mb-2 capitalize" style={{ color: textColor }}>
                               {difficulty}
                             </div>
                             <div className="text-2xl font-bold mb-1" style={{ color: primaryColor }}>
                               {stats.average.toFixed(1)}/10
                             </div>
-                            <div className="text-sm" style={{ color: `${tertiaryColor}70` }}>
+                            <div className="text-sm" style={{ color: `${textColor}70` }}>
                               {stats.count} question{stats.count !== 1 ? 's' : ''}
                             </div>
                           </div>
@@ -673,7 +683,7 @@ const TestComponent: React.FC = () => {
 
                     {/* Question-by-Question Results */}
                     <div className="space-y-3">
-                      <h3 className="text-xl font-bold" style={{ color: tertiaryColor }}>
+                      <h3 className="text-xl font-bold" style={{ color: textColor }}>
                         Question Details
                       </h3>
                       <div className="grid grid-cols-1 gap-3">
@@ -695,11 +705,11 @@ const TestComponent: React.FC = () => {
                                           }}>
                                       {question.category}
                                     </span>
-                                    <span className="text-sm" style={{ color: `${tertiaryColor}70` }}>
+                                    <span className="text-sm" style={{ color: `${textColor}70` }}>
                                       Question {index + 1}
                                     </span>
                                   </div>
-                                  <div className="text-sm" style={{ color: tertiaryColor }}>
+                                  <div className="text-sm" style={{ color: textColor }}>
                                     {question.question.length > 100 ? question.question.substring(0, 100) + '...' : question.question}
                                   </div>
                                 </div>
@@ -709,7 +719,7 @@ const TestComponent: React.FC = () => {
                                       {marks}/10
                                     </div>
                                   ) : (
-                                    <div className="text-sm" style={{ color: `${tertiaryColor}50` }}>
+                                    <div className="text-sm" style={{ color: `${textColor}50` }}>
                                       Not answered
                                     </div>
                                   )}
@@ -723,7 +733,7 @@ const TestComponent: React.FC = () => {
 
                     {/* Difficulty Level Summary */}
                     <div className="space-y-3">
-                      <h3 className="text-xl font-bold" style={{ color: tertiaryColor }}>
+                      <h3 className="text-xl font-bold" style={{ color: textColor }}>
                         Difficulty Level Summary
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -817,7 +827,7 @@ const TestComponent: React.FC = () => {
                   style={{ 
                     borderColor: primaryColor,
                     color: primaryColor,
-                    backgroundColor: 'white'
+                     backgroundColor: cardColor
                   }}
                 >
                   Back to Practice
@@ -831,7 +841,7 @@ const TestComponent: React.FC = () => {
       {/* Exit Confirmation Modal */}
       {showExitModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+           <div className="rounded-2xl shadow-2xl max-w-md w-full p-6 transition-colors duration-300" style={{ backgroundColor: cardColor }}>
             <div className="text-center">
               {/* Warning Icon */}
               <div className="mx-auto flex items-center justify-center w-16 h-16 rounded-full mb-4" style={{ backgroundColor: `${primaryColor}15` }}>
@@ -841,12 +851,12 @@ const TestComponent: React.FC = () => {
               </div>
               
               {/* Title */}
-              <h3 className="text-xl font-bold mb-2" style={{ color: tertiaryColor }}>
+              <h3 className="text-xl font-bold mb-2" style={{ color: textColor }}>
                 End Test?
               </h3>
               
               {/* Message */}
-              <p className="text-gray-600 mb-6">
+                               <p className="mb-6 transition-colors duration-300" style={{ color: textSecondaryColor }}>
                 Are you sure you want to end this test? Your progress will be lost.
               </p>
               
@@ -858,13 +868,13 @@ const TestComponent: React.FC = () => {
                   style={{ 
                     borderColor: `${primaryColor}40`,
                     color: primaryColor,
-                    backgroundColor: 'white'
+                     backgroundColor: cardColor
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = `${primaryColor}08`
+                     e.currentTarget.style.backgroundColor = hoverColor
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'white'
+                     e.currentTarget.style.backgroundColor = cardColor
                   }}
                 >
                   Cancel
@@ -895,7 +905,7 @@ const TestComponent: React.FC = () => {
 export default TestComponent
 
 const RecordAnswer = ({setAnswer, setShowRecordingModal, handleSubmitAudio, currentQuestion, setAudioResult, setIsAudioResult, currentQuestionIndex, updateQuestionMarks}: {setAnswer: (answer: string) => void, setShowRecordingModal: (show: boolean) => void, handleSubmitAudio: () => void, currentQuestion: string, setAudioResult: (result: AudioAnswerEvaluation | null) => void, setIsAudioResult: (isAudio: boolean) => void, currentQuestionIndex: number, updateQuestionMarks: (questionIndex: number, marks: number, result: AnswerEvaluation | AudioAnswerEvaluation) => void}) => {
-  const { primaryColor, tertiaryColor } = useThemeStore()
+  const { primaryColor, textColor, textSecondaryColor, cardColor, hoverColor } = useThemeStore()
   const [isRecording, setIsRecording] = useState(false)
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
   const [audioUrl, setAudioUrl] = useState<string>('')
@@ -1070,7 +1080,7 @@ const RecordAnswer = ({setAnswer, setShowRecordingModal, handleSubmitAudio, curr
   }
 
   return (
-    <div className='bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden' style={{ border: `1px solid ${primaryColor}20` }}>
+     <div className='rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden transition-colors duration-300' style={{ backgroundColor: cardColor, border: `1px solid ${primaryColor}20` }}>
       {/* Header */}
       <div className='p-6 pb-4' style={{ backgroundColor: `${primaryColor}05` }}>
         <div className='flex items-center justify-between'>
@@ -1081,19 +1091,26 @@ const RecordAnswer = ({setAnswer, setShowRecordingModal, handleSubmitAudio, curr
               </svg>
             </div>
     <div>
-              <h3 className='text-lg font-semibold' style={{ color: tertiaryColor }}>
+              <h3 className='text-lg font-semibold' style={{ color: textColor }}>
                 Audio Answer
               </h3>
-              <p className='text-sm' style={{ color: `${tertiaryColor}70` }}>
+              <p className='text-sm' style={{ color: `${textColor}70` }}>
                 Record or upload your answer
               </p>
             </div>
           </div>
           <button 
             onClick={() => setShowRecordingModal(false)}
-            className='p-2 rounded-full hover:bg-white hover:shadow-sm transition-all duration-200'
-          >
-            <svg className='w-5 h-5' style={{ color: tertiaryColor }} fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+             className='p-2 rounded-full hover:shadow-sm transition-all duration-200'
+             style={{ backgroundColor: 'transparent' }}
+             onMouseEnter={(e) => {
+               e.currentTarget.style.backgroundColor = hoverColor
+             }}
+             onMouseLeave={(e) => {
+               e.currentTarget.style.backgroundColor = 'transparent'
+             }}
+           >
+            <svg className='w-5 h-5' style={{ color: textColor }} fill='none' stroke='currentColor' viewBox='0 0 24 24'>
               <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M6 18L18 6M6 6l12 12' />
             </svg>
           </button>
@@ -1113,14 +1130,14 @@ const RecordAnswer = ({setAnswer, setShowRecordingModal, handleSubmitAudio, curr
                 permissionStatus === 'granted' ? 'bg-green-500' : 
                 permissionStatus === 'denied' ? 'bg-red-500' : 'bg-yellow-500'
               }`}></div>
-              <span className='text-sm font-medium' style={{ color: tertiaryColor }}>
+              <span className='text-sm font-medium' style={{ color: textColor }}>
                 {permissionStatus === 'granted' ? 'Microphone Ready' :
                  permissionStatus === 'denied' ? 'Microphone Access Denied' :
                  permissionStatus === 'checking' ? 'Checking...' : 'Click Start Recording to Grant Permission'}
               </span>
             </div>
             {permissionStatus === 'denied' && (
-              <p className='text-xs mt-1' style={{ color: `${tertiaryColor}70` }}>
+              <p className='text-xs mt-1' style={{ color: `${textColor}70` }}>
                 Please enable microphone access in your device settings.
               </p>
             )}
@@ -1154,7 +1171,7 @@ const RecordAnswer = ({setAnswer, setShowRecordingModal, handleSubmitAudio, curr
           {/* Divider */}
           <div className='flex items-center'>
             <div className='flex-1 h-px' style={{ backgroundColor: `${primaryColor}20` }}></div>
-            <span className='px-4 text-sm' style={{ color: `${tertiaryColor}50` }}>or</span>
+            <span className='px-4 text-sm' style={{ color: `${textColor}50` }}>or</span>
             <div className='flex-1 h-px' style={{ backgroundColor: `${primaryColor}20` }}></div>
           </div>
 
@@ -1190,10 +1207,10 @@ const RecordAnswer = ({setAnswer, setShowRecordingModal, handleSubmitAudio, curr
               </button>
               
               <div className='flex-1'>
-                <div className='text-sm font-semibold' style={{ color: tertiaryColor }}>
+                <div className='text-sm font-semibold' style={{ color: textColor }}>
                   {audioBlob ? `Recorded Audio` : 'Uploaded Audio'}
                 </div>
-                <div className='text-xs' style={{ color: `${tertiaryColor}70` }}>
+                <div className='text-xs' style={{ color: `${textColor}70` }}>
                   {audioBlob ? `${formatTime(recordingTime)} • ${(audioBlob.size / 1024).toFixed(1)} KB` : 'Audio file loaded'}
                 </div>
               </div>
@@ -1208,7 +1225,7 @@ const RecordAnswer = ({setAnswer, setShowRecordingModal, handleSubmitAudio, curr
                   setRecordingTime(0)
                 }}
                 className='flex-1 py-3 px-4 text-sm rounded-lg transition-all duration-200 hover:scale-105 border-2'
-                style={{ borderColor: `${primaryColor}30`, color: primaryColor, backgroundColor: 'white' }}
+                 style={{ borderColor: `${primaryColor}30`, color: primaryColor, backgroundColor: cardColor }}
               >
                 Clear
               </button>
