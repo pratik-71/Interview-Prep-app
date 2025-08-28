@@ -31,7 +31,7 @@ const platform = getPlatformType(); // 'android', 'ios', 'web', or 'unknown'
 
 // Get backend configuration
 const config = getBackendConfig();
-console.log(config.API_BASE_URL); // Always correct URL for current platform
+// Always correct URL for current platform
 ```
 
 ## Usage Examples

@@ -40,12 +40,9 @@ export const useAuthStore = create<AuthStore>()(
       // Actions
       login: async (data: LoginData) => {
         try {
-          console.log('🔐 Auth Store - Login called with data:', data);
           set({ isLoading: true, error: null });
           
-          console.log('🔐 Auth Store - Calling authService.login...');
           const response = await authService.login(data);
-          console.log('🔐 Auth Store - Login response:', response);
           
           if (response.token) {
             authService.setToken(response.token);
@@ -63,7 +60,6 @@ export const useAuthStore = create<AuthStore>()(
             });
           }
         } catch (error) {
-          console.error('🔐 Auth Store - Login error:', error);
           set({
             isLoading: false,
             error: error instanceof Error ? error.message : 'Login failed',

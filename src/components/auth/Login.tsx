@@ -39,31 +39,20 @@ const Login: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('🔐 Login Component - Form submitted');
-    console.log('🔐 Login Component - Form data:', formData);
-    
     if (!formData.email || !formData.password) {
-      console.log('🔐 Login Component - Missing email or password');
       return;
     }
 
     try {
-      console.log('🔐 Login Component - Calling login with:', {
-        email: formData.email,
-        password: formData.password,
-      });
-      
       await login({
         email: formData.email,
         password: formData.password,
       });
       
-      console.log('🔐 Login Component - Login successful, redirecting...');
       // Redirect to practice interview page after successful login
       navigate('/practice', { replace: true });
     } catch (error) {
       // Error is handled by the store
-      console.error('🔐 Login Component - Login error:', error);
     }
   };
 

@@ -87,7 +87,6 @@ const PracticeInterview: React.FC = () => {
       navigate('/practice/questions');
       setIsLoading(false);
     } catch (err) {
-      console.error('Failed to generate questions:', err);
       setIsLoading(false);
       // Fallback to sample questions on error
       setQuestions(sampleQuestions);

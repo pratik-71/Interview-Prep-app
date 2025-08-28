@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useThemeStore } from '../zustand_store/theme_store';
 import { useQuestionsStore } from '../zustand_store/questions_store';
@@ -10,6 +10,7 @@ const QuestionsDisplay: React.FC = () => {
   const [openQuestionId, setOpenQuestionId] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<'beginner' | 'intermediate' | 'expert'>('beginner');
   const [isMobile, setIsMobile] = useState(false);
+  const [expandedHeights, setExpandedHeights] = useState<{ [key: string]: number }>({});
   const navigate = useNavigate();
   const { 
     primaryColor, 
@@ -19,21 +20,63 @@ const QuestionsDisplay: React.FC = () => {
     textSecondaryColor
   } = useThemeStore();
 
+  // Refs for measuring answer heights
+  const answerRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+
   // Detect mobile platform
   useEffect(() => {
     setIsMobile(isMobilePlatform());
   }, []);
 
+  // Measure answer heights when questions change
+  useEffect(() => {
+    if (questions && questions[activeCategory]) {
+      // Reset expanded heights when questions change
+      setExpandedHeights({});
+      setOpenQuestionId(null);
+    }
+  }, [questions, activeCategory]);
+
+  // Reset expanded state when switching categories
+  useEffect(() => {
+    setOpenQuestionId(null);
+  }, [activeCategory]);
+
   const toggleQuestionExpansion = (questionId: string) => {
     if (openQuestionId === questionId) {
+      // Collapse the current question
       setOpenQuestionId(null);
     } else {
-      setOpenQuestionId(questionId);
+      // If another question is open, close it first
+      if (openQuestionId) {
+        setOpenQuestionId(null);
+        // Small delay before opening the new question for smooth transition
+        setTimeout(() => {
+          setOpenQuestionId(questionId);
+          setTimeout(() => {
+            if (answerRefs.current[questionId]) {
+              const height = answerRefs.current[questionId]?.scrollHeight || 0;
+              setExpandedHeights(prev => ({ ...prev, [questionId]: height }));
+            }
+          }, 10);
+        }, 150);
+      } else {
+        // No question is open, open this one directly
+        setOpenQuestionId(questionId);
+        setTimeout(() => {
+          if (answerRefs.current[questionId]) {
+            const height = answerRefs.current[questionId]?.scrollHeight || 0;
+            setExpandedHeights(prev => ({ ...prev, [questionId]: height }));
+          }
+        }, 10);
+      }
     }
   };
 
   const handleCategoryClick = (category: 'beginner' | 'intermediate' | 'expert') => {
     setActiveCategory(category);
+    // Close any open question when switching categories
+    setOpenQuestionId(null);
   };
 
   const handleStartTest = () => {
@@ -125,11 +168,12 @@ const QuestionsDisplay: React.FC = () => {
     };
     const borderColor = categoryColors[activeCategory];
     const isExpanded = openQuestionId === question.id;
+    const answerHeight = expandedHeights[question.id] || 0;
 
     return (
       <div
         key={question.id}
-        className='p-3 sm:p-4 md:p-4 lg:p-5 rounded-lg sm:rounded-xl border-2 shadow-md sm:shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer'
+        className='question-card p-3 sm:p-4 md:p-4 lg:p-5 rounded-lg sm:rounded-xl border-2 shadow-md sm:shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer'
         style={{
           borderColor: borderColor,
           backgroundColor: surfaceColor
@@ -170,22 +214,26 @@ const QuestionsDisplay: React.FC = () => {
           </div>
         </div>
 
-        {/* Answer Section with CSS Transitions */}
+        {/* Answer Section with Improved CSS Transitions */}
         <div 
-          className='overflow-hidden transition-all duration-300 ease-in-out'
+          className='answer-section overflow-hidden transition-all duration-300 ease-out'
           style={{ 
-            maxHeight: isExpanded ? '1000px' : '0px',
+            maxHeight: isExpanded ? `${answerHeight + 32}px` : '0px',
             opacity: isExpanded ? 1 : 0,
-            transform: isExpanded ? 'translateY(0)' : 'translateY(-10px)'
+            transform: isExpanded ? 'translateY(0)' : 'translateY(-8px)',
+            marginTop: isExpanded ? '16px' : '0px',
+            paddingTop: isExpanded ? '16px' : '0px',
+            borderTop: isExpanded ? `1px solid ${primaryColor}20` : '1px solid transparent'
           }}
         >
-          <div className='mt-4 pt-4 border-t' style={{ borderColor: `${primaryColor}20` }}>
-            <div className='space-y-4'>
-              <div>
-                <div className='p-4 rounded-lg' style={{ backgroundColor: `${primaryColor}05`, border: `1px solid ${primaryColor}20` }}>
-                  <p className='text-sm sm:text-base md:text-lg leading-relaxed'
-                    style={{ color: textColor }}>{question.answer}</p>
-                </div>
+          <div 
+            ref={(el) => { answerRefs.current[question.id] = el; }}
+            className='space-y-4'
+          >
+            <div>
+              <div className='p-4 rounded-lg' style={{ backgroundColor: `${primaryColor}05`, border: `1px solid ${primaryColor}20` }}>
+                <p className='text-sm sm:text-base md:text-lg leading-relaxed'
+                  style={{ color: textColor }}>{question.answer}</p>
               </div>
             </div>
           </div>
@@ -247,6 +295,27 @@ const QuestionsDisplay: React.FC = () => {
 
   return (
     <div className='space-y-4 flex-1 flex flex-col min-h-0'>
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: ${primaryColor}40;
+          border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: ${primaryColor}60;
+        }
+        .question-card {
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .answer-section {
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+      `}</style>
       {renderHeader()}
       {renderCategoryTabs()}
       {renderQuestionsList()}

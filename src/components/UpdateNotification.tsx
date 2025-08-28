@@ -53,7 +53,6 @@ const UpdateNotification: React.FC = () => {
         window.location.reload();
       }
     } catch (error) {
-      console.error('Update failed:', error);
       setIsUpdating(false);
     }
   };

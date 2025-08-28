@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useReducer, useCallback, useMemo } from 'react'
 import { useThemeStore } from '../zustand_store/theme_store'
 import { useQuestionsStore } from '../zustand_store/questions_store'
 import { AnswerEvaluation, AudioAnswerEvaluation, GeminiService } from '../services/geminiService'
@@ -7,10 +7,130 @@ import { useNavigate } from 'react-router-dom'
 import { isMobilePlatform } from '../utils/mobileDetection'
 import { gsap } from 'gsap'
 
+// Types for analytics data
+interface TestAnalytics {
+  technology: string;
+  totalQuestions: number;
+  questionsAnswered: number;
+  totalMarks: number;
+  maxPossibleMarks: number;
+  percentageScore: number;
+  timeSpent: number;
+}
+
+// State interface
+interface TestState {
+  currentQuestionIndex: number;
+  answer: string;
+  showRecordingModal: boolean;
+  hasResponseArrived: boolean;
+  isAudioResult: boolean;
+  audioResult: AudioAnswerEvaluation | null;
+  testResult: AnswerEvaluation | null;
+  isEvaluatingText: boolean;
+  showExitModal: boolean;
+  questionMarks: { [key: number]: number };
+  questionResults: { [key: number]: AnswerEvaluation | AudioAnswerEvaluation };
+  showFinalResults: boolean;
+  testStartTime: number | null;
+  testEndTime: number | null;
+  isTestCompleted: boolean;
+}
+
+// Action types
+type TestAction = 
+  | { type: 'SET_CURRENT_QUESTION_INDEX'; payload: number }
+  | { type: 'SET_ANSWER'; payload: string }
+  | { type: 'SET_SHOW_RECORDING_MODAL'; payload: boolean }
+  | { type: 'SET_HAS_RESPONSE_ARRIVED'; payload: boolean }
+  | { type: 'SET_IS_AUDIO_RESULT'; payload: boolean }
+  | { type: 'SET_AUDIO_RESULT'; payload: AudioAnswerEvaluation | null }
+  | { type: 'SET_TEST_RESULT'; payload: AnswerEvaluation | null }
+  | { type: 'SET_IS_EVALUATING_TEXT'; payload: boolean }
+  | { type: 'SET_SHOW_EXIT_MODAL'; payload: boolean }
+  | { type: 'UPDATE_QUESTION_MARKS'; payload: { index: number; marks: number; result: AnswerEvaluation | AudioAnswerEvaluation } }
+  | { type: 'SET_SHOW_FINAL_RESULTS'; payload: boolean }
+  | { type: 'START_TEST'; payload: number }
+  | { type: 'COMPLETE_TEST'; payload: number }
+  | { type: 'RESET_TEST' };
+
+// Initial state
+const initialState: TestState = {
+  currentQuestionIndex: 0,
+  answer: '',
+  showRecordingModal: false,
+  hasResponseArrived: false,
+  isAudioResult: false,
+  audioResult: null,
+  testResult: null,
+  isEvaluatingText: false,
+  showExitModal: false,
+  questionMarks: {},
+  questionResults: {},
+  showFinalResults: false,
+  testStartTime: null,
+  testEndTime: null,
+  isTestCompleted: false
+};
+
+// Reducer function
+function testReducer(state: TestState, action: TestAction): TestState {
+  switch (action.type) {
+    case 'SET_CURRENT_QUESTION_INDEX':
+      return { ...state, currentQuestionIndex: action.payload };
+    case 'SET_ANSWER':
+      return { ...state, answer: action.payload };
+    case 'SET_SHOW_RECORDING_MODAL':
+      return { ...state, showRecordingModal: action.payload };
+    case 'SET_HAS_RESPONSE_ARRIVED':
+      return { ...state, hasResponseArrived: action.payload };
+    case 'SET_IS_AUDIO_RESULT':
+      return { ...state, isAudioResult: action.payload };
+    case 'SET_AUDIO_RESULT':
+      return { ...state, audioResult: action.payload };
+    case 'SET_TEST_RESULT':
+      return { ...state, testResult: action.payload };
+    case 'SET_IS_EVALUATING_TEXT':
+      return { ...state, isEvaluatingText: action.payload };
+    case 'SET_SHOW_EXIT_MODAL':
+      return { ...state, showExitModal: action.payload };
+    case 'UPDATE_QUESTION_MARKS':
+      return {
+        ...state,
+        questionMarks: { ...state.questionMarks, [action.payload.index]: action.payload.marks },
+        questionResults: { ...state.questionResults, [action.payload.index]: action.payload.result }
+      };
+    case 'SET_SHOW_FINAL_RESULTS':
+      return { ...state, showFinalResults: action.payload };
+    case 'START_TEST':
+      return { ...state, testStartTime: action.payload };
+    case 'COMPLETE_TEST':
+      return { ...state, testEndTime: action.payload, isTestCompleted: true };
+    case 'RESET_TEST':
+      return { ...initialState };
+    default:
+      return state;
+  }
+}
+
 const TestComponent: React.FC = () => {
   const { questions } = useQuestionsStore();
   const navigate = useNavigate();
   const [isMobile, setIsMobile] = useState(false);
+  
+  // Helper function to safely get audio-specific properties
+  const getAudioProperties = (result: AnswerEvaluation | AudioAnswerEvaluation | undefined) => {
+    if (result && 'confidence_marks' in result) {
+      return {
+        confidence_level: (result as AudioAnswerEvaluation).confidence_marks,
+        fluency_score: (result as AudioAnswerEvaluation).fluency_marks
+      };
+    }
+    return { confidence_level: 0, fluency_score: 0 };
+  };
+  
+  // Use useReducer for state management
+  const [state, dispatch] = useReducer(testReducer, initialState);
   
   // Refs for animations
   const headerRef = useRef<HTMLDivElement>(null);
@@ -18,8 +138,16 @@ const TestComponent: React.FC = () => {
   const progressBarRef = useRef<HTMLDivElement>(null);
   const inputSectionRef = useRef<HTMLDivElement>(null);
   
+  // Refs for auto-scrolling to results
+  const textResultRef = useRef<HTMLDivElement>(null);
+  const audioResultRef = useRef<HTMLDivElement>(null);
+  
+  // Time tracking refs
+  const testStartTimeRef = useRef<number>(0);
+  const totalTimeRef = useRef<number>(0);
+  
   // Select 15 questions: 5 from each difficulty level
-  const getSelectedQuestions = () => {
+  const getSelectedQuestions = useCallback(() => {
     if (!questions) return [];
     
     const beginnerQuestions = questions.beginner || [];
@@ -41,27 +169,9 @@ const TestComponent: React.FC = () => {
     }
     
     return allSelected;
-  };
+  }, [questions]);
   
   const allQuestions = getSelectedQuestions();
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
-  const [answer, setAnswer] = useState('')
-  const [showRecordingModal, setShowRecordingModal] = useState(false)
-  const [hasResponseArrived,setHasResponseArrived] = useState(false)
-  const [isAudioResult, setIsAudioResult] = useState(false)
-  const [audioResult, setAudioResult] = useState<AudioAnswerEvaluation | null>(null)
-  const [testResult, setTestResult] = useState<AnswerEvaluation | null>(null)
-  const [isEvaluatingText, setIsEvaluatingText] = useState(false)
-  const [showExitModal, setShowExitModal] = useState(false)
-  
-  // Add marks tracking state
-  const [questionMarks, setQuestionMarks] = useState<{ [key: number]: number }>({})
-  const [questionResults, setQuestionResults] = useState<{ [key: number]: AnswerEvaluation | AudioAnswerEvaluation }>({})
-  const [showFinalResults, setShowFinalResults] = useState(false)
-  
-  // Refs for auto-scrolling to results
-  const textResultRef = useRef<HTMLDivElement>(null)
-  const audioResultRef = useRef<HTMLDivElement>(null)
   
   // Get colors from theme store
    const { 
@@ -72,12 +182,59 @@ const TestComponent: React.FC = () => {
      borderColor,
      cardColor,
      hoverColor
-   } = useThemeStore()
+  } = useThemeStore();
 
   // Detect mobile platform
   useEffect(() => {
     setIsMobile(isMobilePlatform());
   }, []);
+  
+  // Start test timer when component mounts
+  useEffect(() => {
+    testStartTimeRef.current = Date.now();
+    dispatch({ type: 'START_TEST', payload: Date.now() });
+  }, []);
+  
+  // COMPLETELY DIFFERENT APPROACH: Direct DOM manipulation timer
+  const timerRef = useRef<HTMLSpanElement>(null);
+  const questionStartTimeRef = useRef<number>(0);
+  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Textarea refs for direct DOM manipulation
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const textareaValueRef = useRef<string>('');
+  
+  // Reset timer when question changes - NO STATE UPDATES
+  useEffect(() => {
+    // Clear previous interval
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+    }
+    
+    // Reset timer start time
+    questionStartTimeRef.current = Date.now();
+    
+    // Update display immediately to 0:00
+    if (timerRef.current) {
+      timerRef.current.textContent = '0:00';
+    }
+    
+    // Start new interval that ONLY updates the DOM element
+    timerIntervalRef.current = setInterval(() => {
+      if (timerRef.current && questionStartTimeRef.current > 0) {
+        const elapsed = Math.floor((Date.now() - questionStartTimeRef.current) / 1000);
+        const minutes = Math.floor(elapsed / 60);
+        const seconds = elapsed % 60;
+        timerRef.current.textContent = `${minutes}:${String(seconds).padStart(2, '0')}`;
+      }
+    }, 1000);
+    
+    return () => {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+      }
+    };
+  }, [state.currentQuestionIndex]);
 
   // Entrance animations
   useEffect(() => {
@@ -101,20 +258,20 @@ const TestComponent: React.FC = () => {
     );
   }, []);
 
-  // Animate question changes
-  useEffect(() => {
-    if (questionCardRef.current) {
-      gsap.fromTo(questionCardRef.current, 
-        { x: -15, opacity: 0.9 }, 
-        { x: 0, opacity: 1, duration: 0.3, ease: "power2.out" }
-      );
-    }
-  }, [currentQuestionIndex]);
+  // Animate question changes - DISABLED to fix typing issue
+  // useEffect(() => {
+  //   if (questionCardRef.current && state.currentQuestionIndex > 0) {
+  //     gsap.fromTo(questionCardRef.current, 
+  //       { x: -15, opacity: 0.9 }, 
+  //       { x: 0, opacity: 1, duration: 0.3, ease: "power2.out" }
+  //     );
+  //   }
+  // }, [state.currentQuestionIndex]);
 
   // Auto-scroll to results when they arrive
   useEffect(() => {
-    if (hasResponseArrived) {
-      const targetRef = isAudioResult ? audioResultRef.current : textResultRef.current
+    if (state.hasResponseArrived) {
+      const targetRef = state.isAudioResult ? audioResultRef.current : textResultRef.current;
       if (targetRef) {
         // Add a small delay to ensure the DOM has updated
         setTimeout(() => {
@@ -122,87 +279,54 @@ const TestComponent: React.FC = () => {
             behavior: 'smooth', 
             block: 'start',
             inline: 'nearest'
-          })
+          });
           
           // Simple fade-in animation for results
           gsap.fromTo(targetRef, 
             { opacity: 0, y: 10 }, 
             { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" }
-          )
-        }, 100)
+          );
+        }, 100);
       }
     }
-  }, [hasResponseArrived, isAudioResult])
+  }, [state.hasResponseArrived, state.isAudioResult]);
 
-  const handleBackClick = () => {
-    setShowExitModal(true)
-  }
+  // Calculate final results
+  const calculateFinalResults = useCallback(() => {
+    const answeredQuestions = Object.keys(state.questionMarks).length;
+    if (answeredQuestions === 0) return null;
 
-  const handleConfirmExit = () => {
-    // Mobile-friendly navigation - always go to practice instead of relying on history
-    if (isMobile) {
-      navigate('/practice')
-    } else {
-      // On web, try to use history if available
-      try {
-        if (typeof window !== 'undefined' && window.history && window.history.length > 1) {
-          navigate(-1)
-        } else {
-          navigate('/practice')
-        }
-      } catch (error) {
-        // Fallback to practice page
-        navigate('/practice')
-      }
-    }
-    setShowExitModal(false)
-  }
-
-  const handleCancelExit = () => {
-    setShowExitModal(false)
-  }
-
-  // Add marks tracking functions
-  const updateQuestionMarks = (questionIndex: number, marks: number, result: AnswerEvaluation | AudioAnswerEvaluation) => {
-    setQuestionMarks(prev => ({ ...prev, [questionIndex]: marks }))
-    setQuestionResults(prev => ({ ...prev, [questionIndex]: result }))
-  }
-
-  const calculateFinalResults = () => {
-    const answeredQuestions = Object.keys(questionMarks).length
-    if (answeredQuestions === 0) return null
-
-    const totalMarks = Object.values(questionMarks).reduce((sum, marks) => sum + marks, 0)
-    const maxPossibleMarks = answeredQuestions * 10 // Assuming 10 is max per question
-    const averageMarks = totalMarks / answeredQuestions
-    const percentage = (totalMarks / maxPossibleMarks) * 100
+    const totalMarks = Object.values(state.questionMarks).reduce((sum, marks) => sum + marks, 0);
+    const maxPossibleMarks = answeredQuestions * 10; // Assuming 10 is max per question
+    const averageMarks = totalMarks / answeredQuestions;
+    const percentage = (totalMarks / maxPossibleMarks) * 100;
 
     // Calculate breakdown by difficulty
     const difficultyBreakdown = {
       beginner: { count: 0, totalMarks: 0, average: 0 },
       intermediate: { count: 0, totalMarks: 0, average: 0 },
       expert: { count: 0, totalMarks: 0, average: 0 }
-    }
+    };
 
-    Object.entries(questionResults).forEach(([index, result]) => {
-      const questionIndex = parseInt(index)
-      const question = allQuestions[questionIndex]
-      const difficulty = question.category as keyof typeof difficultyBreakdown
-      const marks = result.marks // Use result.marks instead of questionMarks[questionIndex]
+    Object.entries(state.questionResults).forEach(([index, result]) => {
+      const questionIndex = parseInt(index);
+      const question = allQuestions[questionIndex];
+      const difficulty = question.category as keyof typeof difficultyBreakdown;
+      const marks = result.marks;
 
       if (difficultyBreakdown[difficulty]) {
-        difficultyBreakdown[difficulty].count++
-        difficultyBreakdown[difficulty].totalMarks += marks
+        difficultyBreakdown[difficulty].count++;
+        difficultyBreakdown[difficulty].totalMarks += marks;
       }
-    })
+    });
 
     // Calculate averages for each difficulty
     Object.keys(difficultyBreakdown).forEach(difficulty => {
-      const key = difficulty as keyof typeof difficultyBreakdown
+      const key = difficulty as keyof typeof difficultyBreakdown;
       if (difficultyBreakdown[key].count > 0) {
-        difficultyBreakdown[key].average = difficultyBreakdown[key].totalMarks / difficultyBreakdown[key].count
+        difficultyBreakdown[key].average = difficultyBreakdown[key].totalMarks / difficultyBreakdown[key].count;
       }
-    })
+    });
 
     return {
       totalMarks,
@@ -212,71 +336,150 @@ const TestComponent: React.FC = () => {
       answeredQuestions,
       totalQuestions: allQuestions.length,
       difficultyBreakdown
-    }
-  }
+    };
+  }, [state.questionMarks, state.questionResults, allQuestions]);
 
-  const handleTestCompletion = () => {
-    const results = calculateFinalResults()
-    if (results) {
-      setShowFinalResults(true)
+  // Send analytics to backend
+  const sendAnalyticsToBackend = useCallback(async (analytics: TestAnalytics) => {
+    try {
+      const response = await fetch('/analytics/test-results', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}` // Assuming you store auth token
+        },
+        body: JSON.stringify(analytics)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to send analytics');
+      }
+
+      const result = await response.json();
+              // Analytics sent successfully
+    } catch (error) {
+      // Error sending analytics
+      // Don't block the user experience if analytics fails
     }
-  }
+  }, []);
+
+  // Handle test completion
+  const handleTestCompletion = useCallback(async () => {
+    const results = calculateFinalResults();
+    if (!results) return;
+
+    // Calculate total time spent
+    const endTime = Date.now();
+    const totalTimeSpent = Math.round((endTime - testStartTimeRef.current) / 1000 / 60); // in minutes
+    
+    dispatch({ type: 'COMPLETE_TEST', payload: endTime });
+
+    // Prepare analytics data
+    const analytics: TestAnalytics = {
+      technology: 'Interview Practice', // You can make this dynamic based on question type
+        totalQuestions: allQuestions.length,
+        questionsAnswered: results.answeredQuestions,
+        totalMarks: results.totalMarks,
+        maxPossibleMarks: results.maxPossibleMarks,
+        percentageScore: results.percentage,
+      timeSpent: totalTimeSpent
+    };
+
+    // Send analytics to backend
+    await sendAnalyticsToBackend(analytics);
+
+    // Show final results
+    dispatch({ type: 'SET_SHOW_FINAL_RESULTS', payload: true });
+  }, [calculateFinalResults, allQuestions.length, sendAnalyticsToBackend]);
+
+  // Check if test should auto-complete
+  useEffect(() => {
+    if (state.currentQuestionIndex >= allQuestions.length - 1 && Object.keys(state.questionMarks).length > 0) {
+      // Auto-complete test when last question is answered
+      setTimeout(() => {
+        handleTestCompletion();
+      }, 2000);
+    }
+  }, [state.currentQuestionIndex, state.questionMarks, allQuestions.length, handleTestCompletion]);
+
+  const handleBackClick = () => {
+    dispatch({ type: 'SET_SHOW_EXIT_MODAL', payload: true });
+  };
+
+  const handleConfirmExit = () => {
+    // Mobile-friendly navigation - always go to practice instead of relying on history
+    if (isMobile) {
+      navigate('/practice');
+    } else {
+      // On web, try to use history if available
+      try {
+        if (typeof window !== 'undefined' && window.history && window.history.length > 1) {
+          navigate(-1);
+        } else {
+          navigate('/practice');
+        }
+      } catch (error) {
+        // Fallback to practice page
+        navigate('/practice');
+      }
+    }
+    dispatch({ type: 'SET_SHOW_EXIT_MODAL', payload: false });
+  };
+
+  const handleCancelExit = () => {
+    dispatch({ type: 'SET_SHOW_EXIT_MODAL', payload: false });
+  };
+
+  // Update question marks
+  const updateQuestionMarks = useCallback((questionIndex: number, marks: number, result: AnswerEvaluation | AudioAnswerEvaluation) => {
+    dispatch({ type: 'UPDATE_QUESTION_MARKS', payload: { index: questionIndex, marks, result } });
+  }, []);
 
   const handleSubmitText = async () => {
     try {
-      if (answer.trim()) {
-        setIsEvaluatingText(true)
+      if (textareaValueRef.current.trim()) {
+        dispatch({ type: 'SET_IS_EVALUATING_TEXT', payload: true });
         
         // Get current question for context
-        const currentQuestion = allQuestions[currentQuestionIndex]?.question || 'Interview question'
+        const currentQuestion = allQuestions[state.currentQuestionIndex]?.question || 'Interview question';
         
         // Evaluate text answer using Gemini
-        const geminiService = GeminiService.getInstance()
-        const evaluation = await geminiService.evaluateAnswer(currentQuestion, answer)
+        const geminiService = GeminiService.getInstance();
+        const evaluation = await geminiService.evaluateAnswer(currentQuestion, textareaValueRef.current);
         
         // Set the result and trigger display
-        setTestResult(evaluation)
-        setIsAudioResult(false)
-        setHasResponseArrived(true)
+        dispatch({ type: 'SET_TEST_RESULT', payload: evaluation });
+        dispatch({ type: 'SET_IS_AUDIO_RESULT', payload: false });
+        dispatch({ type: 'SET_HAS_RESPONSE_ARRIVED', payload: true });
         
         // Track marks for this question
-        updateQuestionMarks(currentQuestionIndex, evaluation.marks, evaluation)
+        updateQuestionMarks(state.currentQuestionIndex, evaluation.marks, evaluation);
         
-        // Check if this was the last question
-        if (currentQuestionIndex === allQuestions.length - 1) {
-          // Small delay to show the result before final summary
-          setTimeout(() => {
-            handleTestCompletion()
-          }, 2000)
+        // Clear answer for next question
+        textareaValueRef.current = '';
+        if (textareaRef.current) {
+          textareaRef.current.value = '';
         }
         
-        console.log('Text answer evaluated:', evaluation)
+        // Text answer evaluated
       }
     } catch (error) {
-      console.error('Error evaluating text answer:', error)
-      alert('Failed to evaluate answer. Please try again.')
+              // Error evaluating text answer
+      alert('Failed to evaluate answer. Please try again.');
     } finally {
-      setIsEvaluatingText(false)
+      dispatch({ type: 'SET_IS_EVALUATING_TEXT', payload: false });
     }
-  }
+  };
 
   const handleSubmitAudio = async () => {
     try {
       // Audio evaluation is handled in the RecordAnswer component
       // This function is called after audio evaluation is complete
-      setHasResponseArrived(true)
-      
-      // Check if this was the last question
-      if (currentQuestionIndex === allQuestions.length - 1) {
-        // Small delay to show the result before final summary
-        setTimeout(() => {
-          handleTestCompletion()
-        }, 2000)
-      }
+      dispatch({ type: 'SET_HAS_RESPONSE_ARRIVED', payload: true });
     } catch (error) {
-      console.error('Error handling audio submission:', error)
+              // Error handling audio submission
     }
-  }
+  };
 
   // Check if we have questions and if current index is valid
   if (!allQuestions || !Array.isArray(allQuestions) || allQuestions.length === 0) {
@@ -289,21 +492,21 @@ const TestComponent: React.FC = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold mb-4 transition-colors duration-300" style={{ color: textColor }}>No Questions Available</h2>
+          <h2 className='text-2xl font-bold mb-4 transition-colors duration-300' style={{ color: textColor }}>No Questions Available</h2>
           <p className="text-lg transition-colors duration-300" style={{ color: textSecondaryColor }}>Please load some questions first</p>
         </div>
       </div>
-    )
+    );
   }
 
-  if (currentQuestionIndex >= allQuestions.length) {
+  if (state.currentQuestionIndex >= allQuestions.length) {
     return (
       <div className="flex items-center justify-center min-h-screen transition-colors duration-300" style={{ backgroundColor: backgroundColor }}>
         <div className="text-center p-8">
           <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center" 
                style={{ backgroundColor: `${primaryColor}15` }}>
             <svg className="w-10 h-10" style={{ color: primaryColor }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-10 10 10 0 100-20 10 10 0 000 20z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
 
@@ -311,7 +514,7 @@ const TestComponent: React.FC = () => {
           <p className="text-lg mb-6 transition-colors duration-300" style={{ color: textSecondaryColor }}>You've answered all the questions</p>
 
           <button 
-            onClick={() => setCurrentQuestionIndex(0)}
+            onClick={() => dispatch({ type: 'RESET_TEST' })}
             className="px-6 py-3 rounded-lg text-white font-medium transition-all duration-300 hover:scale-105 shadow-lg"
             style={{ backgroundColor: primaryColor }}
           >
@@ -319,11 +522,11 @@ const TestComponent: React.FC = () => {
           </button>
         </div>
       </div>
-    )
+    );
   }
   
-  const currentQuestion = allQuestions[currentQuestionIndex]
-  const progressPercentage = ((currentQuestionIndex + 1) / allQuestions.length) * 100
+  const currentQuestion = allQuestions[state.currentQuestionIndex];
+  const progressPercentage = ((state.currentQuestionIndex + 1) / allQuestions.length) * 100;
 
   return (
     <div className="h-screen p-4 sm:p-6 md:p-8 overflow-y-auto custom-scrollbar transition-colors duration-300" style={{ backgroundColor: backgroundColor }}>
@@ -348,18 +551,37 @@ const TestComponent: React.FC = () => {
               </button>
             </div>
 
-            {/* Center: Title */}
-            <div className="flex-1 flex justify-center">
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold transition-colors duration-300 hover:scale-105" style={{ color: textColor }}>
-              Interview Test
-            </h1>
-            </div>
-
             {/* Right: Page Indicator */}
             <div className="flex-shrink-0">
-            <span className="text-lg font-semibold transition-all duration-200 hover:scale-110" style={{ color: primaryColor }}>
-              {currentQuestionIndex + 1} / {allQuestions.length}
-            </span>
+              <span className="text-lg font-semibold transition-all duration-200 hover:scale-110" style={{ color: primaryColor }}>
+              {state.currentQuestionIndex + 1} / {allQuestions.length}
+              </span>
+            </div>
+            
+            {/* Timer */}
+            <div className="flex-shrink-0 ml-4">
+              <div className="flex flex-col items-center gap-1">
+                <div className="text-xs font-medium" style={{ color: `${textColor}70` }}>Question Time</div>
+                <div 
+                  className="flex items-center gap-2 px-3 py-1 rounded-lg border-2 transition-all duration-300" 
+                  style={{ 
+                    borderColor: `${primaryColor}30`, 
+                    backgroundColor: `${primaryColor}08`,
+                    transform: 'scale(1)' // No animation to avoid state interference
+                  }}
+                >
+                  <svg className="w-4 h-4" style={{ color: primaryColor }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span 
+                    ref={timerRef}
+                    className="text-sm font-medium" 
+                    style={{ color: primaryColor }}
+                  >
+                    0:00
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
           
@@ -399,13 +621,12 @@ const TestComponent: React.FC = () => {
             <label className="block text-lg font-semibold mb-2" style={{ color: primaryColor }}>
               Your Answer:
             </label>
-            <button onClick={() => setShowRecordingModal(true)} className='py-2 px-4 text-sm rounded-lg transition-all duration-200 hover:scale-105 active:scale-95' style={{ backgroundColor: primaryColor, color: 'white' }}>
+            <button onClick={() => dispatch({ type: 'SET_SHOW_RECORDING_MODAL', payload: true })} className='py-2 px-4 text-sm rounded-lg transition-all duration-200 hover:scale-105 active:scale-95' style={{ backgroundColor: primaryColor, color: 'white' }}>
              Record Answer  
             </button>
             </div>
             <textarea
-              value={answer}
-              onChange={(e) => setAnswer(e.target.value)}
+              ref={textareaRef}
               placeholder="Type your answer here..."
               className="w-full p-4 border-2 rounded-xl text-lg resize-none focus:outline-none focus:ring-4 transition-all duration-300 hover:scale-105"
               style={{ 
@@ -422,6 +643,12 @@ const TestComponent: React.FC = () => {
                 e.target.style.borderColor = `${primaryColor}30`
                 e.target.style.backgroundColor = `${primaryColor}05`
               }}
+              onInput={(e) => {
+                // Direct DOM manipulation - no React state updates
+                const target = e.target as HTMLTextAreaElement;
+                // Store value in ref for later use, but don't update React state
+                textareaValueRef.current = target.value;
+              }}
             />
           </div>
 
@@ -430,23 +657,28 @@ const TestComponent: React.FC = () => {
             {/* Submit Button */}
             <button 
               onClick={handleSubmitText}
-              disabled={!answer.trim() || isEvaluatingText}
+              disabled={!textareaValueRef.current.trim() || state.isEvaluatingText}
               className="flex-1 px-4 py-2 rounded-xl text-white font-semibold text-lg transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
               style={{ 
-                backgroundColor: answer.trim() && !isEvaluatingText ? primaryColor : `${primaryColor}50`
+                backgroundColor: textareaValueRef.current.trim() && !state.isEvaluatingText ? primaryColor : `${primaryColor}50`
               }}
             >
-              {isEvaluatingText ? 'Evaluating...' : 'Submit Answer'}
+              {state.isEvaluatingText ? 'Evaluating...' : 'Submit Answer'}
             </button>
 
             {/* Next Button */}
            <div className='flex justify-between gap-4'>
-           <button 
+                       <button 
               onClick={() => {
-                setCurrentQuestionIndex(currentQuestionIndex - 1)
-                setAnswer('')
+                // Move to previous question - no analytics needed
+                dispatch({ type: 'SET_CURRENT_QUESTION_INDEX', payload: state.currentQuestionIndex - 1 });
+                // Clear textarea using refs
+                textareaValueRef.current = '';
+                if (textareaRef.current) {
+                  textareaRef.current.value = '';
+                }
               }}
-              disabled={currentQuestionIndex === 0}
+              disabled={state.currentQuestionIndex === 0}
               className="flex-1 px-4 py-2 rounded-xl font-semibold text-lg transition-all duration-300 hover:scale-105 border-2 shadow-lg"
               style={{ 
                 borderColor: primaryColor,
@@ -458,11 +690,56 @@ const TestComponent: React.FC = () => {
             </button>
 
             <button 
-              onClick={() => {
-                setCurrentQuestionIndex(currentQuestionIndex + 1)
-                setAnswer('')
+              onClick={async () => {
+                // Save current question data to backend ONLY if marks exist (answer was submitted)
+                if (state.questionMarks[state.currentQuestionIndex]) {
+                  try {
+                    // Prepare analytics data for current question
+                    const currentQuestion = allQuestions[state.currentQuestionIndex];
+                    const questionData = {
+                      user_id: localStorage.getItem('userId') || '1', // Get from auth
+                      technology: currentQuestion.category,
+                      difficulty_level: currentQuestion.category,
+                      question_text: currentQuestion.question,
+                      user_answer: textareaValueRef.current.trim() || 'Audio Answer',
+                      marks_obtained: state.questionMarks[state.currentQuestionIndex],
+                      max_marks: 10,
+                      time_spent: Math.floor((Date.now() - questionStartTimeRef.current) / 1000), // Time spent on this question
+                      ...getAudioProperties(state.questionResults[state.currentQuestionIndex]),
+                      feedback: state.questionResults[state.currentQuestionIndex]?.feedback || '',
+                      test_date: new Date().toISOString()
+                    };
+
+                    // Send to backend
+                    const response = await fetch('/analytics/question-results', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                      },
+                      body: JSON.stringify(questionData)
+                    });
+
+                    if (response.ok) {
+                      // Question data saved successfully
+                    } else {
+                      // Failed to save question data
+                    }
+                  } catch (error) {
+                    // Error saving question data
+                    // Don't block user experience if analytics fails
+                  }
+                }
+
+                // Move to next question
+                dispatch({ type: 'SET_CURRENT_QUESTION_INDEX', payload: state.currentQuestionIndex + 1 });
+                // Clear textarea using refs
+                textareaValueRef.current = '';
+                if (textareaRef.current) {
+                  textareaRef.current.value = '';
+                }
               }}
-              disabled={currentQuestionIndex === allQuestions.length - 1}
+              disabled={state.currentQuestionIndex === allQuestions.length - 1}
               className="flex-1 px-4 py-2 rounded-xl font-semibold text-lg transition-all duration-300 hover:scale-105 border-2 shadow-lg"
               style={{ 
                 borderColor: primaryColor,
@@ -474,24 +751,12 @@ const TestComponent: React.FC = () => {
             </button>
            </div>
 
-           {/* Finish Test Button */}
-           <button 
-             onClick={handleTestCompletion}
-             disabled={Object.keys(questionMarks).length === 0}
-             className="w-full px-4 py-2 rounded-xl font-semibold text-lg transition-all duration-300 hover:scale-105 border-2 shadow-lg mt-4"
-             style={{ 
-               borderColor: Object.keys(questionMarks).length > 0 ? primaryColor : `${primaryColor}30`,
-               color: Object.keys(questionMarks).length > 0 ? primaryColor : `${primaryColor}50`,
-               backgroundColor: 'transparent'
-             }}
-           >
-             Finish Test
-           </button>
+
           </div>
         </div>
 
         {/* Text Result Display */}
-        {!isAudioResult && hasResponseArrived && testResult && (
+        {!state.isAudioResult && state.hasResponseArrived && state.testResult && (
            <div ref={textResultRef} className='rounded-2xl shadow-xl p-4 sm:p-4 md:p-6 mb-8 transition-all duration-300 hover:scale-105' style={{ backgroundColor: cardColor }}>
             <div className='flex items-center gap-3 mb-6'>
               <div className='w-12 h-12 rounded-full flex items-center justify-center' style={{ backgroundColor: `${primaryColor}15` }}>
@@ -516,13 +781,13 @@ const TestComponent: React.FC = () => {
                   <span className='text-lg font-semibold' style={{ color: textColor }}>Overall Score</span>
                 </div>
                 <div className='text-3xl font-bold' style={{ color: primaryColor }}>
-                  {testResult.marks}/10
+                  {state.testResult.marks}/10
                 </div>
                 <div className='w-full bg-gray-200 rounded-full h-2 mt-2'>
                   <div 
                     className='h-2 rounded-full transition-all duration-500'
                     style={{ 
-                      width: `${(testResult.marks / 10) * 100}%`,
+                      width: `${(state.testResult.marks / 10) * 100}%`,
                       backgroundColor: primaryColor
                     }}
                   />
@@ -540,7 +805,7 @@ const TestComponent: React.FC = () => {
                   <span className='text-lg font-semibold' style={{ color: textColor }}>Feedback</span>
                 </div>
                 <p className='text-base leading-relaxed' style={{ color: textColor }}>
-                  {testResult.feedback}
+                  {state.testResult.feedback}
                 </p>
               </div>
             </div>
@@ -548,7 +813,7 @@ const TestComponent: React.FC = () => {
         )}
 
         {/* Audio Result Display */}
-        {isAudioResult && hasResponseArrived && audioResult && (
+        {state.isAudioResult && state.hasResponseArrived && state.audioResult && (
            <div ref={audioResultRef} className='rounded-2xl shadow-xl p-4 sm:p-4 md:p-6 mb-8 transition-colors duration-300' style={{ backgroundColor: cardColor }}>
             <div className='flex items-center gap-3 mb-6'>
               <div className='w-12 h-12 rounded-full flex items-center justify-center' style={{ backgroundColor: `${primaryColor}15` }}>
@@ -565,14 +830,14 @@ const TestComponent: React.FC = () => {
               {/* Overall Marks */}
               <div className='p-3 rounded-xl text-center' style={{ backgroundColor: `${primaryColor}08` }}>
                 <div className='text-2xl font-bold' style={{ color: primaryColor }}>
-                  {audioResult.marks}/100
+                  {state.audioResult.marks}/100
                 </div>
                 <div className='text-sm font-medium' style={{ color: textColor }}>Overall Score</div>
                 <div className='w-full bg-gray-200 rounded-full h-2 mt-2'>
                   <div 
                     className='h-2 rounded-full transition-all duration-500'
                     style={{ 
-                      width: `${audioResult.marks}%`,
+                      width: `${state.audioResult.marks}%`,
                       backgroundColor: primaryColor
                     }}
                   />
@@ -582,14 +847,14 @@ const TestComponent: React.FC = () => {
               {/* Confidence Marks */}
               <div className='p-3 rounded-xl text-center' style={{ backgroundColor: `${primaryColor}08` }}>
                 <div className='text-2xl font-bold' style={{ color: primaryColor }}>
-                  {audioResult.confidence_marks}/100
+                  {state.audioResult.confidence_marks}/100
                 </div>
                 <div className='text-sm font-medium' style={{ color: textColor }}>Confidence</div>
                 <div className='w-full bg-gray-200 rounded-full h-2 mt-2'>
                   <div 
                     className='h-2 rounded-full transition-all duration-500'
                     style={{ 
-                      width: `${audioResult.confidence_marks}%`,
+                      width: `${state.audioResult.confidence_marks}%`,
                       backgroundColor: primaryColor
                     }}
                   />
@@ -599,14 +864,14 @@ const TestComponent: React.FC = () => {
               {/* Fluency Marks */}
               <div className='p-3 rounded-xl text-center' style={{ backgroundColor: `${primaryColor}08` }}>
                 <div className='text-2xl font-bold' style={{ color: primaryColor }}>
-                  {audioResult.fluency_marks}/100
+                  {state.audioResult.fluency_marks}/100
                 </div>
                 <div className='text-sm font-medium' style={{ color: textColor }}>Fluency</div>
                 <div className='w-full bg-gray-200 rounded-full h-2 mt-2'>
                   <div 
                     className='h-2 rounded-full transition-all duration-500'
                     style={{ 
-                      width: `${audioResult.fluency_marks}%`,
+                      width: `${state.audioResult.fluency_marks}%`,
                       backgroundColor: primaryColor
                     }}
                   />
@@ -625,7 +890,7 @@ const TestComponent: React.FC = () => {
                 <span className='text-lg font-semibold' style={{ color: textColor }}>Detailed Feedback</span>
               </div>
               <p className='text-base leading-relaxed' style={{ color: textColor }}>
-                {audioResult.feedback}
+                {state.audioResult.feedback}
               </p>
             </div>
           </div>
@@ -633,23 +898,19 @@ const TestComponent: React.FC = () => {
 
 
       </div>
-                          {showRecordingModal && (
+                          {state.showRecordingModal && (
                <>
                  {/* Backdrop with blur effect */}
                  <div 
                    className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm z-40"
-                   onClick={() => setShowRecordingModal(false)}
+                   onClick={() => dispatch({ type: 'SET_SHOW_RECORDING_MODAL', payload: false })}
                  />
                  {/* Modal */}
                  <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                    <RecordAnswer 
-                     setAnswer={setAnswer} 
-                     setShowRecordingModal={setShowRecordingModal} 
-                     handleSubmitAudio={handleSubmitAudio}
-                     currentQuestion={allQuestions[currentQuestionIndex]?.question || 'Interview question'}
-                     setAudioResult={setAudioResult}
-                     setIsAudioResult={setIsAudioResult}
-                     currentQuestionIndex={currentQuestionIndex}
+                       dispatch={dispatch} 
+                       currentQuestion={allQuestions[state.currentQuestionIndex]?.question || 'Interview question'}
+                       currentQuestionIndex={state.currentQuestionIndex}
                      updateQuestionMarks={updateQuestionMarks}
                    />
                  </div>
@@ -657,7 +918,7 @@ const TestComponent: React.FC = () => {
              )}
 
       {/* Final Results Modal */}
-      {showFinalResults && (
+      {state.showFinalResults && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
            <div className="rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto transition-colors duration-300" style={{ backgroundColor: cardColor }}>
             <div className="p-8">
@@ -678,8 +939,8 @@ const TestComponent: React.FC = () => {
 
               {/* Results Summary */}
               {(() => {
-                const results = calculateFinalResults()
-                if (!results) return null
+                const results = calculateFinalResults();
+                if (!results) return null;
 
                 return (
                   <div className="space-y-6">
@@ -731,8 +992,8 @@ const TestComponent: React.FC = () => {
                       </h3>
                       <div className="grid grid-cols-1 gap-3">
                         {allQuestions.map((question, index) => {
-                          const marks = questionMarks[index]
-                          const isAnswered = marks !== undefined
+                          const marks = state.questionMarks[index];
+                          const isAnswered = marks !== undefined;
                           
                           return (
                             <div key={index} className="p-4 rounded-xl border-2 transition-colors duration-300" style={{
@@ -787,14 +1048,14 @@ const TestComponent: React.FC = () => {
                             <div className="text-lg font-semibold mb-2 text-green-800">Beginner</div>
                             <div className="text-2xl font-bold mb-1 text-green-600">
                               {(() => {
-                                const beginnerStats = results.difficultyBreakdown.beginner
-                                return beginnerStats.count > 0 ? `${beginnerStats.totalMarks}/${beginnerStats.count * 10}` : '0/0'
+                                const beginnerStats = results.difficultyBreakdown.beginner;
+                                return beginnerStats.count > 0 ? `${beginnerStats.totalMarks}/${beginnerStats.count * 10}` : '0/0';
                               })()}
                             </div>
                             <div className="text-sm text-green-700">
                               {(() => {
-                                const beginnerStats = results.difficultyBreakdown.beginner
-                                return beginnerStats.count > 0 ? `${beginnerStats.average.toFixed(1)}/10 avg` : 'No questions'
+                                const beginnerStats = results.difficultyBreakdown.beginner;
+                                return beginnerStats.count > 0 ? `${beginnerStats.average.toFixed(1)}/10 avg` : 'No questions';
                               })()}
                             </div>
                           </div>
@@ -806,14 +1067,14 @@ const TestComponent: React.FC = () => {
                             <div className="text-lg font-semibold mb-2 text-amber-800">Intermediate</div>
                             <div className="text-2xl font-bold mb-1 text-amber-600">
                               {(() => {
-                                const intermediateStats = results.difficultyBreakdown.intermediate
-                                return intermediateStats.count > 0 ? `${intermediateStats.totalMarks}/${intermediateStats.count * 10}` : '0/0'
+                                const intermediateStats = results.difficultyBreakdown.intermediate;
+                                return intermediateStats.count > 0 ? `${intermediateStats.totalMarks}/${intermediateStats.count * 10}` : '0/0';
                               })()}
                             </div>
                             <div className="text-sm text-amber-700">
                               {(() => {
-                                const intermediateStats = results.difficultyBreakdown.intermediate
-                                return intermediateStats.count > 0 ? `${intermediateStats.average.toFixed(1)}/10 avg` : 'No questions'
+                                const intermediateStats = results.difficultyBreakdown.intermediate;
+                                return intermediateStats.count > 0 ? `${intermediateStats.average.toFixed(1)}/10 avg` : 'No questions';
                               })()}
                             </div>
                           </div>
@@ -825,14 +1086,14 @@ const TestComponent: React.FC = () => {
                             <div className="text-lg font-semibold mb-2 text-red-800">Expert</div>
                             <div className="text-2xl font-bold mb-1 text-red-600">
                               {(() => {
-                                const expertStats = results.difficultyBreakdown.expert
-                                return expertStats.count > 0 ? `${expertStats.totalMarks}/${expertStats.count * 10}` : '0/0'
+                                const expertStats = results.difficultyBreakdown.expert;
+                                return expertStats.count > 0 ? `${expertStats.totalMarks}/${expertStats.count * 10}` : '0/0';
                               })()}
                             </div>
                             <div className="text-sm text-red-700">
                               {(() => {
-                                const expertStats = results.difficultyBreakdown.expert
-                                return expertStats.count > 0 ? `${expertStats.average.toFixed(1)}/10 avg` : 'No questions'
+                                const expertStats = results.difficultyBreakdown.expert;
+                                return expertStats.count > 0 ? `${expertStats.average.toFixed(1)}/10 avg` : 'No questions';
                               })()}
                             </div>
                           </div>
@@ -847,15 +1108,7 @@ const TestComponent: React.FC = () => {
               <div className="flex flex-col sm:flex-row gap-4 mt-8">
                 <button
                   onClick={() => {
-                    setShowFinalResults(false)
-                    setCurrentQuestionIndex(0)
-                    setQuestionMarks({})
-                    setQuestionResults({})
-                    setAnswer('')
-                    setTestResult(null)
-                    setAudioResult(null)
-                    setHasResponseArrived(false)
-                    setIsAudioResult(false)
+                      dispatch({ type: 'RESET_TEST' });
                   }}
                   className="flex-1 px-6 py-3 rounded-xl font-medium text-white transition-all duration-300 hover:scale-105 shadow-lg"
                   style={{ backgroundColor: primaryColor }}
@@ -864,8 +1117,8 @@ const TestComponent: React.FC = () => {
                 </button>
                 <button
                   onClick={() => {
-                    setShowFinalResults(false)
-                    navigate('/practice')
+                    dispatch({ type: 'SET_SHOW_FINAL_RESULTS', payload: false });
+                    navigate('/practice');
                   }}
                   className="flex-1 px-6 py-3 rounded-xl font-medium border-2 transition-all duration-300 hover:scale-105"
                   style={{ 
@@ -883,7 +1136,7 @@ const TestComponent: React.FC = () => {
       )}
 
       {/* Exit Confirmation Modal */}
-      {showExitModal && (
+      {state.showExitModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
            <div className="rounded-2xl shadow-2xl max-w-md w-full p-6 transition-colors duration-300" style={{ backgroundColor: cardColor }}>
             <div className="text-center">
@@ -948,44 +1201,44 @@ const TestComponent: React.FC = () => {
 
 export default TestComponent
 
-const RecordAnswer = ({setAnswer, setShowRecordingModal, handleSubmitAudio, currentQuestion, setAudioResult, setIsAudioResult, currentQuestionIndex, updateQuestionMarks}: {setAnswer: (answer: string) => void, setShowRecordingModal: (show: boolean) => void, handleSubmitAudio: () => void, currentQuestion: string, setAudioResult: (result: AudioAnswerEvaluation | null) => void, setIsAudioResult: (isAudio: boolean) => void, currentQuestionIndex: number, updateQuestionMarks: (questionIndex: number, marks: number, result: AnswerEvaluation | AudioAnswerEvaluation) => void}) => {
-  const { primaryColor, textColor, cardColor, hoverColor } = useThemeStore()
-  const [isRecording, setIsRecording] = useState(false)
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
-  const [audioUrl, setAudioUrl] = useState<string>('')
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [recordingTime, setRecordingTime] = useState(0)
-  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null)
+const RecordAnswer = ({dispatch, currentQuestion, currentQuestionIndex, updateQuestionMarks}: {dispatch: React.Dispatch<any>, currentQuestion: string, currentQuestionIndex: number, updateQuestionMarks: (questionIndex: number, marks: number, result: AnswerEvaluation | AudioAnswerEvaluation) => void}) => {
+  const { primaryColor, textColor, cardColor, hoverColor } = useThemeStore();
+  const [isRecording, setIsRecording] = useState(false);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string>('');
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
 
-  const [isEvaluating, setIsEvaluating] = useState(false)
-  const [permissionStatus, setPermissionStatus] = useState<'granted' | 'denied' | 'prompt' | 'checking'>('checking')
-  const [isMobile, setIsMobile] = useState(false)
+  const [isEvaluating, setIsEvaluating] = useState(false);
+  const [permissionStatus, setPermissionStatus] = useState<'granted' | 'denied' | 'prompt' | 'checking'>('checking');
+  const [isMobile, setIsMobile] = useState(false);
 
   // Check if device is mobile and get permissions
   useEffect(() => {
     const checkDeviceAndPermissions = async () => {
       try {
         // Check if device is mobile
-        const info = await Device.getInfo()
-        setIsMobile(info.platform === 'ios' || info.platform === 'android')
+        const info = await Device.getInfo();
+        setIsMobile(info.platform === 'ios' || info.platform === 'android');
         
         // Check microphone permission
         if (navigator.permissions && navigator.permissions.query) {
-          const permission = await navigator.permissions.query({ name: 'microphone' as PermissionName })
-          setPermissionStatus(permission.state)
+          const permission = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+          setPermissionStatus(permission.state);
         } else {
           // Fallback for browsers that don't support permissions API
-          setPermissionStatus('prompt')
+          setPermissionStatus('prompt');
         }
       } catch (error) {
-        console.log('Device info not available, assuming web browser')
-        setIsMobile(false)
-        setPermissionStatus('prompt')
+        // Device info not available, assuming web browser
+        setIsMobile(false);
+        setPermissionStatus('prompt');
       }
-    }
+    };
     
-    checkDeviceAndPermissions()
-  }, [])
+    checkDeviceAndPermissions();
+  }, []);
 
   // Request microphone permission
   const requestMicrophonePermission = async () => {
@@ -999,27 +1252,27 @@ const RecordAnswer = ({setAnswer, setShowRecordingModal, handleSubmitAudio, curr
           sampleRate: isMobile ? 44100 : 48000,
           channelCount: 1
         }
-      }
+      };
       
-      const stream = await navigator.mediaDevices.getUserMedia(constraints)
-      setPermissionStatus('granted')
-      stream.getTracks().forEach(track => track.stop()) // Stop the stream immediately
-      return true
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      setPermissionStatus('granted');
+      stream.getTracks().forEach(track => track.stop()); // Stop the stream immediately
+      return true;
     } catch (error) {
-      console.error('Microphone permission denied:', error)
-      setPermissionStatus('denied')
-      return false
+              // Microphone permission denied
+      setPermissionStatus('denied');
+      return false;
     }
-  }
+  };
 
   // Start recording
   const startRecording = async () => {
     try {
       // Always request permission when user clicks Start Recording
-      const hasPermission = await requestMicrophonePermission()
+      const hasPermission = await requestMicrophonePermission();
       if (!hasPermission) {
-        alert('Microphone permission is required to record audio.')
-        return
+        alert('Microphone permission is required to record audio.');
+        return;
       }
       
       // Get audio stream with mobile-optimized settings
@@ -1031,97 +1284,97 @@ const RecordAnswer = ({setAnswer, setShowRecordingModal, handleSubmitAudio, curr
           sampleRate: isMobile ? 44100 : 48000,
           channelCount: 1
         }
-      }
+      };
       
-      const stream = await navigator.mediaDevices.getUserMedia(constraints)
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
       
       // Handle MIME type compatibility for Android
-      let mimeType = 'audio/webm'
+      let mimeType = 'audio/webm';
       if (MediaRecorder.isTypeSupported('audio/webm')) {
-        mimeType = 'audio/webm'
+        mimeType = 'audio/webm';
       } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
-        mimeType = 'audio/mp4'
+        mimeType = 'audio/mp4';
       } else if (MediaRecorder.isTypeSupported('audio/ogg')) {
-        mimeType = 'audio/ogg'
+        mimeType = 'audio/ogg';
       } else {
-        mimeType = 'audio/webm' // fallback
+        mimeType = 'audio/webm'; // fallback
       }
       
-      const recorder = new MediaRecorder(stream, { mimeType })
+      const recorder = new MediaRecorder(stream, { mimeType });
       
-      const chunks: Blob[] = []
+      const chunks: Blob[] = [];
       
-      recorder.ondataavailable = (e) => chunks.push(e.data)
+      recorder.ondataavailable = (e) => chunks.push(e.data);
       
-      recorder.start()
-      setMediaRecorder(recorder)
-      setIsRecording(true)
-      setRecordingTime(0)
+      recorder.start();
+      setMediaRecorder(recorder);
+      setIsRecording(true);
+      setRecordingTime(0);
       
       // Timer for recording
       const timer = setInterval(() => {
-        setRecordingTime(prev => prev + 1)
-      }, 1000)
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
       
       recorder.onstop = () => {
-        clearInterval(timer)
-        const blob = new Blob(chunks, { type: mimeType })
-        setAudioBlob(blob)
-        const url = URL.createObjectURL(blob)
-        setAudioUrl(url)
-      }
+        clearInterval(timer);
+        const blob = new Blob(chunks, { type: mimeType });
+        setAudioBlob(blob);
+        const url = URL.createObjectURL(blob);
+        setAudioUrl(url);
+      };
     } catch (error) {
-      console.error('Error accessing microphone:', error)
+              // Error accessing microphone
       if (isMobile) {
         if (error instanceof DOMException && error.name === 'NotAllowedError') {
-          alert('Microphone permission denied. Please enable it in your device settings.')
+          alert('Microphone permission denied. Please enable it in your device settings.');
         } else if (error instanceof DOMException && error.name === 'NotSupportedError') {
-          alert('Audio recording is not supported on this device.')
+          alert('Audio recording is not supported on this device.');
         } else {
-          alert('Microphone access error. Please check your device settings and try again.')
+          alert('Microphone access error. Please check your device settings and try again.');
         }
       } else {
-        alert('Please allow microphone access to record audio')
+        alert('Please allow microphone access to record audio');
       }
     }
-  }
+  };
 
   // Stop recording
   const stopRecording = () => {
     if (mediaRecorder && isRecording) {
-      mediaRecorder.stop()
-      mediaRecorder.stream.getTracks().forEach(track => track.stop())
-      setIsRecording(false)
+      mediaRecorder.stop();
+      mediaRecorder.stream.getTracks().forEach(track => track.stop());
+      setIsRecording(false);
     }
-  }
+  };
 
   // Play recorded audio
   const playAudio = () => {
     if (audioUrl) {
-      const audio = new Audio(audioUrl)
-      audio.play()
-      setIsPlaying(true)
-      audio.onended = () => setIsPlaying(false)
+      const audio = new Audio(audioUrl);
+      audio.play();
+      setIsPlaying(true);
+      audio.onended = () => setIsPlaying(false);
     }
-  }
+  };
 
   // Handle file upload
   const handleAudioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+    const file = e.target.files?.[0];
     if (file) {
-      setAudioBlob(file)
-      const url = URL.createObjectURL(file)
-      setAudioUrl(url)
-      setRecordingTime(0)
+      setAudioBlob(file);
+      const url = URL.createObjectURL(file);
+      setAudioUrl(url);
+      setRecordingTime(0);
     }
-  }
+  };
 
   // Format time
   const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins}:${secs.toString().padStart(2, '0')}`
-  }
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   return (
      <div className='rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden transition-colors duration-300' style={{ backgroundColor: cardColor, border: `1px solid ${primaryColor}20` }}>
@@ -1131,7 +1384,7 @@ const RecordAnswer = ({setAnswer, setShowRecordingModal, handleSubmitAudio, curr
           <div className='flex items-center space-x-3'>
             <div className='w-10 h-10 rounded-full flex items-center justify-center' style={{ backgroundColor: primaryColor }}>
               <svg className='w-5 h-5 text-white' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3 3z' />
+                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z' />
               </svg>
             </div>
     <div>
@@ -1144,7 +1397,7 @@ const RecordAnswer = ({setAnswer, setShowRecordingModal, handleSubmitAudio, curr
             </div>
           </div>
           <button 
-            onClick={() => setShowRecordingModal(false)}
+            onClick={() => dispatch({ type: 'SET_SHOW_RECORDING_MODAL', payload: false })}
              className='p-2 rounded-full hover:shadow-sm transition-all duration-200'
              style={{ backgroundColor: 'transparent' }}
              onMouseEnter={(e) => {
@@ -1264,9 +1517,9 @@ const RecordAnswer = ({setAnswer, setShowRecordingModal, handleSubmitAudio, curr
             <div className='flex space-x-3'>
               <button 
                 onClick={() => {
-                  setAudioBlob(null)
-                  setAudioUrl('')
-                  setRecordingTime(0)
+                  setAudioBlob(null);
+                  setAudioUrl('');
+                  setRecordingTime(0);
                 }}
                 className='flex-1 py-3 px-4 text-sm rounded-lg transition-all duration-200 hover:scale-105 border-2'
                  style={{ borderColor: `${primaryColor}30`, color: primaryColor, backgroundColor: cardColor }}
@@ -1277,24 +1530,24 @@ const RecordAnswer = ({setAnswer, setShowRecordingModal, handleSubmitAudio, curr
                 onClick={async () => {
                   if (audioBlob) {
                     try {
-                      setIsEvaluating(true)
+                      setIsEvaluating(true);
                       
                       // Evaluate audio using Gemini
-                      const geminiService = GeminiService.getInstance()
-                      const evaluation = await geminiService.evaluateAudioAnswer(currentQuestion, audioBlob)
+                      const geminiService = GeminiService.getInstance();
+                      const evaluation = await geminiService.evaluateAudioAnswer(currentQuestion, audioBlob);
                       
                       // Don't set the answer text, just store the evaluation results
-                      setAnswer('') // Clear the input box
-                      setAudioResult(evaluation)
-                      setIsAudioResult(true)
-                      setShowRecordingModal(false)
-                      handleSubmitAudio()
-                      updateQuestionMarks(currentQuestionIndex, evaluation.marks, evaluation)
+                      dispatch({ type: 'SET_ANSWER', payload: '' }); // Clear the input box
+                      dispatch({ type: 'SET_AUDIO_RESULT', payload: evaluation });
+                      dispatch({ type: 'SET_IS_AUDIO_RESULT', payload: true });
+                      dispatch({ type: 'SET_SHOW_RECORDING_MODAL', payload: false });
+                      // handleSubmitAudio(); // This function is no longer needed here
+                      updateQuestionMarks(currentQuestionIndex, evaluation.marks, evaluation);
                     } catch (error) {
-                      console.error('Error evaluating audio:', error)
-                      alert('Failed to evaluate audio. Please try again.')
+                      // Error evaluating audio
+                      alert('Failed to evaluate audio. Please try again.');
                     } finally {
-                      setIsEvaluating(false)
+                      setIsEvaluating(false);
                     }
                   }
                 }}

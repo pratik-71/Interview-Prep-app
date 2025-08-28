@@ -51,7 +51,6 @@ const Register: React.FC = () => {
       navigate('/login', { replace: true, state: { justRegistered: true } });
     } catch (error) {
       // Error is handled by the store
-      console.error('Registration error:', error);
     }
   };
 

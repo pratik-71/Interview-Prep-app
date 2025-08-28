@@ -26,7 +26,7 @@ const AskAI: React.FC = () => {
 	const inputSectionRef = useRef<HTMLDivElement>(null);
 	const quickPromptsRef = useRef<HTMLDivElement>(null);
 
-	// Entrance animations
+09	// Entrance animations
 	useEffect(() => {
 		const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
 		

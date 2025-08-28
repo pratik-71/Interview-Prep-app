@@ -31,27 +31,12 @@ export class ApiService {
       ...options,
     };
 
-    // Debug logging
-    console.log('🚀 API Request:', {
-      url,
-      method: config.method || 'GET',
-      body: config.body,
-      headers: config.headers
-    });
+    // Request configuration
 
     try {
       const response = await fetch(url, config);
       
-      // Debug response
-      console.log('📡 API Response:', {
-        status: response.status,
-        statusText: response.statusText,
-        headers: Object.fromEntries(response.headers.entries())
-      });
-
       const data = await response.json();
-      
-      console.log('📦 Response Data:', data);
 
       if (!response.ok) {
         throw new Error(data.message || `HTTP error! status: ${response.status}`);
@@ -59,7 +44,6 @@ export class ApiService {
 
       return data;
     } catch (error) {
-      console.error('❌ API request failed:', error);
       throw error;
     }
   }
@@ -85,9 +69,7 @@ export class ApiService {
       headers.Authorization = `Bearer ${token}`;
     }
 
-    // Debug the data being sent
-    console.log('📤 POST Data:', data);
-    console.log('📤 POST Headers:', headers);
+    // Prepare request data
     
     return this.request<T>(endpoint, {
       method: 'POST',
@@ -131,7 +113,6 @@ export class ApiService {
       const response = await fetch(`${this.baseUrl}/health`, { method: 'GET' });
       return response.ok;
     } catch (error) {
-      console.error('Backend health check failed:', error);
       return false;
     }
   }

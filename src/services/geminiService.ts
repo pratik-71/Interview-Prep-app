@@ -46,7 +46,6 @@ export class GeminiService {
       const text = typeof response.text === 'function' ? response.text() : String(response);
       return text?.trim() || 'No response';
     } catch (error) {
-      console.error('Error asking Gemini:', error);
       return 'Sorry, I could not get an answer right now. Please try again later.';
     }
   }
@@ -72,7 +71,6 @@ export class GeminiService {
       
       return this.parseGeminiResponse(text);
     } catch (error) {
-      console.error('Error generating interview questions:', error);
       throw new Error('Failed to generate interview questions. Please try again.');
     }
   }
@@ -148,7 +146,6 @@ Make questions relevant and practical. Focus on real-world scenarios that interv
         expert: cleanQuestions(parsed.expert)
       };
     } catch (error) {
-      console.error('Error parsing Gemini response:', error);
       throw new Error('Failed to parse questions. Please try again.');
     }
   }
@@ -196,7 +193,6 @@ Keep feedback brief and actionable. Be encouraging but honest.`;
         feedback: parsed.feedback
       };
     } catch (error) {
-      console.error('Error evaluating answer:', error);
       // Return default response if evaluation fails
       return {
         marks: 5,
@@ -265,7 +261,6 @@ Please ensure the response is valid JSON.`
         feedback: evaluation.feedback || 'No feedback provided',
       }
     } catch (error) {
-      console.error('Error evaluating audio answer:', error)
       throw new Error('Failed to evaluate audio answer')
     }
   }

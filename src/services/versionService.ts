@@ -67,15 +67,14 @@ export class VersionService {
       
       // Compare versions
       if (this.isNewerVersion(serverVersion.version, this.currentVersion)) {
-        console.log(`Update available: ${this.currentVersion} → ${serverVersion.version}`);
+        // Update available
         return serverVersion;
       }
 
       return null;
-    } catch (error) {
-      console.error('Error checking for updates:', error);
-      return null;
-    }
+          } catch (error) {
+        return null;
+      }
   }
 
   // Compare version strings
@@ -125,7 +124,7 @@ export class VersionService {
 
   // Handle when update is available
   private handleUpdateAvailable(update: VersionInfo): void {
-    console.log('Update available:', update);
+            // Update available
     
     // Dispatch custom event for components to listen to
     const event = new CustomEvent('appUpdateAvailable', { 
@@ -187,7 +186,6 @@ export class VersionService {
         window.location.reload();
       }
     } catch (error) {
-      console.error('Error reloading app:', error);
       // Final fallback
       if (typeof window !== 'undefined') {
         window.location.reload();
@@ -207,7 +205,6 @@ export class VersionService {
         isMobile: this.isMobile
       };
     } catch (error) {
-      console.error('Error getting device info:', error);
       return {
         appVersion: this.currentVersion,
         userAgent: navigator.userAgent,
