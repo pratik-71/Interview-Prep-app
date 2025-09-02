@@ -1,13 +1,13 @@
 // Backend Configuration - Centralized settings
 export const BACKEND_CONFIG = {
   // Production backend URL
-  BASE_URL: 'https://interview-prep-backend-viok.onrender.com',
+  BASE_URL: 'http://localhost:10000',
   
   // Port (for local development if needed)
   PORT: 10000,
   
   // Full API base URL
-  API_BASE_URL: 'https://interview-prep-backend-viok.onrender.com',
+  API_BASE_URL: 'http://localhost:10000',
   
   // API endpoints
   ENDPOINTS: {

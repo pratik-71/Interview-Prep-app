@@ -11,6 +11,7 @@ import PracticeInterview from './Webpage/PracticeInterview';
 import AskAI from './Webpage/AskAI';
 import QuestionsDisplay from './Webpage/QuestionsDisplay';
 import TestComponent from './Webpage/Test_Component';
+import Analytics from './Webpage/Analytics';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import NotFound from './components/common/NotFound';
 
@@ -91,6 +92,16 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <TestComponent />
+                </Layout>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/analytics" 
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Analytics />
                 </Layout>
               </ProtectedRoute>
             } 

@@ -1,4 +1,4 @@
-import { getBackendUrl } from '../config/forceProduction';
+import { BACKEND_CONFIG } from '../config/backend';
 
 // Platform Detection Utility
 export const PlatformType = {
@@ -80,10 +80,9 @@ export const isDesktopWeb = (): boolean => {
 
 // Get environment-specific backend configuration
 export const getBackendConfig = () => {
-  const backendUrl = getBackendUrl();
   return {
-    BASE_URL: backendUrl,
-    API_BASE_URL: backendUrl,
+    BASE_URL: BACKEND_CONFIG.BASE_URL,
+    API_BASE_URL: BACKEND_CONFIG.API_BASE_URL,
     IS_MOBILE: isMobileApp(),
     PLATFORM: getPlatformType()
   };

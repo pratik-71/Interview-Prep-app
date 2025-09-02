@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef, useReducer, useCallback, useMemo } from 'react'
 import { useThemeStore } from '../zustand_store/theme_store'
 import { useQuestionsStore } from '../zustand_store/questions_store'
+import { useAuthStore } from '../zustand_store/auth_store'
 import { AnswerEvaluation, AudioAnswerEvaluation, GeminiService } from '../services/geminiService'
 import { Device } from '@capacitor/device'
 import { useNavigate } from 'react-router-dom'
 import { isMobilePlatform } from '../utils/mobileDetection'
 import { gsap } from 'gsap'
+import { BACKEND_CONFIG } from '../config/backend'
 
 // Types for analytics data
 interface TestAnalytics {
@@ -115,8 +117,11 @@ function testReducer(state: TestState, action: TestAction): TestState {
 
 const TestComponent: React.FC = () => {
   const { questions } = useQuestionsStore();
+  const { token } = useAuthStore();
   const navigate = useNavigate();
   const [isMobile, setIsMobile] = useState(false);
+  
+
   
   // Helper function to safely get audio-specific properties
   const getAudioProperties = (result: AnswerEvaluation | AudioAnswerEvaluation | undefined) => {
@@ -132,6 +137,9 @@ const TestComponent: React.FC = () => {
   // Use useReducer for state management
   const [state, dispatch] = useReducer(testReducer, initialState);
   
+  // Add state for textarea value to trigger re-renders
+  const [textareaValue, setTextareaValue] = useState('');
+  
   // Refs for animations
   const headerRef = useRef<HTMLDivElement>(null);
   const questionCardRef = useRef<HTMLDivElement>(null);
@@ -144,10 +152,9 @@ const TestComponent: React.FC = () => {
   
   // Time tracking refs
   const testStartTimeRef = useRef<number>(0);
-  const totalTimeRef = useRef<number>(0);
   
-  // Select 15 questions: 5 from each difficulty level
-  const getSelectedQuestions = useCallback(() => {
+  // Select 15 questions: 5 from each difficulty level - memoized to prevent re-shuffling
+  const allQuestions = useMemo(() => {
     if (!questions) return [];
     
     const beginnerQuestions = questions.beginner || [];
@@ -170,8 +177,6 @@ const TestComponent: React.FC = () => {
     
     return allSelected;
   }, [questions]);
-  
-  const allQuestions = getSelectedQuestions();
   
   // Get colors from theme store
    const { 
@@ -342,11 +347,11 @@ const TestComponent: React.FC = () => {
   // Send analytics to backend
   const sendAnalyticsToBackend = useCallback(async (analytics: TestAnalytics) => {
     try {
-      const response = await fetch('/analytics/test-results', {
+      const response = await fetch(`${BACKEND_CONFIG.API_BASE_URL}/analytics/test-results`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}` // Assuming you store auth token
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(analytics)
       });
@@ -354,14 +359,10 @@ const TestComponent: React.FC = () => {
       if (!response.ok) {
         throw new Error('Failed to send analytics');
       }
-
-      const result = await response.json();
-              // Analytics sent successfully
     } catch (error) {
-      // Error sending analytics
-      // Don't block the user experience if analytics fails
+     console.error('Failed to send analytics');
     }
-  }, []);
+  }, [token]);
 
   // Handle test completion
   const handleTestCompletion = useCallback(async () => {
@@ -455,12 +456,7 @@ const TestComponent: React.FC = () => {
         // Track marks for this question
         updateQuestionMarks(state.currentQuestionIndex, evaluation.marks, evaluation);
         
-        // Clear answer for next question
-        textareaValueRef.current = '';
-        if (textareaRef.current) {
-          textareaRef.current.value = '';
-        }
-        
+        // Don't clear the answer - keep it visible for the user to see
         // Text answer evaluated
       }
     } catch (error) {
@@ -469,17 +465,7 @@ const TestComponent: React.FC = () => {
     } finally {
       dispatch({ type: 'SET_IS_EVALUATING_TEXT', payload: false });
     }
-  };
-
-  const handleSubmitAudio = async () => {
-    try {
-      // Audio evaluation is handled in the RecordAnswer component
-      // This function is called after audio evaluation is complete
-      dispatch({ type: 'SET_HAS_RESPONSE_ARRIVED', payload: true });
-    } catch (error) {
-              // Error handling audio submission
-    }
-  };
+  };;
 
   // Check if we have questions and if current index is valid
   if (!allQuestions || !Array.isArray(allQuestions) || allQuestions.length === 0) {
@@ -644,10 +630,11 @@ const TestComponent: React.FC = () => {
                 e.target.style.backgroundColor = `${primaryColor}05`
               }}
               onInput={(e) => {
-                // Direct DOM manipulation - no React state updates
+                // Update both ref and state to trigger re-renders
                 const target = e.target as HTMLTextAreaElement;
-                // Store value in ref for later use, but don't update React state
-                textareaValueRef.current = target.value;
+                const value = target.value;
+                textareaValueRef.current = value;
+                setTextareaValue(value);
               }}
             />
           </div>
@@ -657,10 +644,10 @@ const TestComponent: React.FC = () => {
             {/* Submit Button */}
             <button 
               onClick={handleSubmitText}
-              disabled={!textareaValueRef.current.trim() || state.isEvaluatingText}
+              disabled={!textareaValue.trim() || state.isEvaluatingText}
               className="flex-1 px-4 py-2 rounded-xl text-white font-semibold text-lg transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
               style={{ 
-                backgroundColor: textareaValueRef.current.trim() && !state.isEvaluatingText ? primaryColor : `${primaryColor}50`
+                backgroundColor: textareaValue.trim() && !state.isEvaluatingText ? primaryColor : `${primaryColor}50`
               }}
             >
               {state.isEvaluatingText ? 'Evaluating...' : 'Submit Answer'}
@@ -672,8 +659,9 @@ const TestComponent: React.FC = () => {
               onClick={() => {
                 // Move to previous question - no analytics needed
                 dispatch({ type: 'SET_CURRENT_QUESTION_INDEX', payload: state.currentQuestionIndex - 1 });
-                // Clear textarea using refs
+                // Clear textarea using refs and state
                 textareaValueRef.current = '';
+                setTextareaValue('');
                 if (textareaRef.current) {
                   textareaRef.current.value = '';
                 }
@@ -697,7 +685,6 @@ const TestComponent: React.FC = () => {
                     // Prepare analytics data for current question
                     const currentQuestion = allQuestions[state.currentQuestionIndex];
                     const questionData = {
-                      user_id: localStorage.getItem('userId') || '1', // Get from auth
                       technology: currentQuestion.category,
                       difficulty_level: currentQuestion.category,
                       question_text: currentQuestion.question,
@@ -710,21 +697,17 @@ const TestComponent: React.FC = () => {
                       test_date: new Date().toISOString()
                     };
 
-                    // Send to backend
-                    const response = await fetch('/analytics/question-results', {
-                      method: 'POST',
-                      headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                      },
-                      body: JSON.stringify(questionData)
-                    });
+                                                    // Send to backend
+                                 await fetch(`${BACKEND_CONFIG.API_BASE_URL}/analytics/question-results`, {
+                                  method: 'POST',
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${token}`
+                                  },
+                                  body: JSON.stringify(questionData)
+                                });
 
-                    if (response.ok) {
-                      // Question data saved successfully
-                    } else {
-                      // Failed to save question data
-                    }
+                   
                   } catch (error) {
                     // Error saving question data
                     // Don't block user experience if analytics fails
@@ -733,8 +716,9 @@ const TestComponent: React.FC = () => {
 
                 // Move to next question
                 dispatch({ type: 'SET_CURRENT_QUESTION_INDEX', payload: state.currentQuestionIndex + 1 });
-                // Clear textarea using refs
+                // Clear textarea using refs and state
                 textareaValueRef.current = '';
+                setTextareaValue('');
                 if (textareaRef.current) {
                   textareaRef.current.value = '';
                 }

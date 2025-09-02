@@ -1,10 +1,12 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { authService, User, LoginData, RegisterData } from '../services/authService';
+import { BACKEND_CONFIG } from '../config/backend';
 
 interface AuthState {
   user: User | null;
   token: string | null;
+  refreshToken: string | null; // Add refresh token
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
@@ -33,6 +35,7 @@ export const useAuthStore = create<AuthStore>()(
       // Initial state
       user: null,
       token: null,
+      refreshToken: null,
       isAuthenticated: false,
       isLoading: false,
       error: null,
@@ -45,10 +48,10 @@ export const useAuthStore = create<AuthStore>()(
           const response = await authService.login(data);
           
           if (response.token) {
-            authService.setToken(response.token);
             set({
               user: response.user,
               token: response.token,
+              refreshToken: response.refreshToken || null, // Add refresh token
               isAuthenticated: true,
               isLoading: false,
               error: null,
@@ -86,10 +89,10 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       logout: () => {
-        authService.removeToken();
         set({
           user: null,
           token: null,
+          refreshToken: null,
           isAuthenticated: false,
           isLoading: false,
           error: null,
@@ -102,17 +105,62 @@ export const useAuthStore = create<AuthStore>()(
 
       checkAuth: async () => {
         try {
-          const token = authService.getToken();
+          // Get token from current state (Zustand store)
+          const currentState = useAuthStore.getState();
+          const token = currentState.token;
+          
           if (!token) {
             set({ isAuthenticated: false, user: null });
             return;
           }
 
           set({ isLoading: true });
-          const response = await authService.getCurrentUser(token);
+          
+          // Call the /auth/me endpoint directly with the token from Zustand store
+          const response = await fetch(`${BACKEND_CONFIG.API_BASE_URL}/auth/me`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            
+            // If it's a 401, try to refresh the token
+            if (response.status === 401) {
+              const currentState = useAuthStore.getState();
+              const refreshToken = currentState.refreshToken;
+              
+              if (refreshToken) {
+                try {
+                  const refreshResponse = await authService.refreshToken(refreshToken);
+                  
+                  if (refreshResponse.token) {
+                    set({
+                      user: currentState.user,
+                      token: refreshResponse.token,
+                      refreshToken: refreshResponse.refreshToken || refreshToken,
+                      isAuthenticated: true,
+                      isLoading: false,
+                      error: null,
+                    });
+                    return; // Successfully refreshed, don't throw error
+                  }
+                } catch (refreshError) {
+                  // Token refresh failed
+                }
+              }
+            }
+            
+            throw new Error(`Token validation failed: ${response.status} ${errorText}`);
+          }
+          
+          const data = await response.json();
           
           set({
-            user: response.user,
+            user: data.user,
             token,
             isAuthenticated: true,
             isLoading: false,
@@ -120,10 +168,10 @@ export const useAuthStore = create<AuthStore>()(
           });
         } catch (error) {
           // Token is invalid, clear auth state
-          authService.removeToken();
           set({
             user: null,
             token: null,
+            refreshToken: null,
             isAuthenticated: false,
             isLoading: false,
             error: null,
@@ -142,6 +190,7 @@ export const useAuthStore = create<AuthStore>()(
       partialize: (state) => ({
         user: state.user,
         token: state.token,
+        refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
       }),
     }
