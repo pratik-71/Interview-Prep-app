@@ -97,12 +97,12 @@ const NetworkDebug: React.FC = () => {
       )}
 
       <div className="mt-4 text-xs text-gray-600 dark:text-gray-400">
-        <p><strong>For mobile debugging:</strong></p>
+        <p><strong>Production Backend:</strong></p>
         <ul className="list-disc list-inside space-y-1">
-          <li>Make sure your computer and mobile device are on the same WiFi network</li>
-          <li>Replace the IP address in networkConfig.ts with your computer's actual IP</li>
-          <li>Ensure the backend server is running on port 10000</li>
-          <li>Check that your computer's firewall allows connections on port 10000</li>
+          <li>Using production backend: https://interview-prep-backend-viok.onrender.com</li>
+          <li>No local server setup required</li>
+          <li>Works on all devices and platforms</li>
+          <li>Make sure you have internet connection</li>
         </ul>
       </div>
     </div>

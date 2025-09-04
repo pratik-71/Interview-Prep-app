@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '../../zustand_store/auth_store';
 import { useThemeStore } from '../../zustand_store/theme_store';
 import { useNavigate, useLocation } from 'react-router-dom';
-import NetworkDebug from '../debug/NetworkDebug';
+
 
 const Login: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -163,10 +163,7 @@ const Login: React.FC = () => {
             </p>
           </div>
 
-          {/* Network Debug Component - Remove in production */}
-          <div className="mt-8">
-            <NetworkDebug />
-          </div>
+
         </div>
       </div>
     </div>

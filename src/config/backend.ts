@@ -2,13 +2,13 @@
 import { networkConfig } from '../utils/networkConfig';
 
 export const BACKEND_CONFIG = {
-  // Dynamic backend URL based on platform
+  // Production backend URL
   get BASE_URL() {
     return networkConfig.getBaseUrl();
   },
   
-  // Port (for local development if needed)
-  PORT: 10000,
+  // Port (for production, not needed in URL)
+  PORT: null,
   
   // Full API base URL
   get API_BASE_URL() {
