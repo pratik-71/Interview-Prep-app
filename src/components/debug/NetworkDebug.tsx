@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { networkConfig } from '../../utils/networkConfig';
-import { getPlatformType, isCapacitorApp } from '../../utils/platformDetection';
 
 const NetworkDebug: React.FC = () => {
   const [networkInfo, setNetworkInfo] = useState<any>(null);
