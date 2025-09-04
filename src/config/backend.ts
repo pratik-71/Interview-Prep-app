@@ -1,13 +1,19 @@
 // Backend Configuration - Centralized settings
+import { networkConfig } from '../utils/networkConfig';
+
 export const BACKEND_CONFIG = {
-  // Production backend URL
-  BASE_URL: 'http://localhost:10000',
+  // Dynamic backend URL based on platform
+  get BASE_URL() {
+    return networkConfig.getBaseUrl();
+  },
   
   // Port (for local development if needed)
   PORT: 10000,
   
   // Full API base URL
-  API_BASE_URL: 'http://localhost:10000',
+  get API_BASE_URL() {
+    return networkConfig.getBaseUrl();
+  },
   
   // API endpoints
   ENDPOINTS: {

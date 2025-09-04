@@ -43,19 +43,36 @@ class AuthService {
   }
 
   async login(data: LoginData): Promise<AuthResponse> {
-    const response = await fetch(`${BACKEND_CONFIG.API_BASE_URL}/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
+    const url = `${BACKEND_CONFIG.API_BASE_URL}/auth/login`;
+    console.log('🔐 Attempting login to:', url);
     
-    if (!response.ok) {
-      throw new Error('Login failed');
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      
+      console.log('📡 Login response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Login failed:', errorText);
+        throw new Error(`Login failed: ${response.status} - ${errorText}`);
+      }
+      
+      const result = await response.json();
+      console.log('✅ Login successful');
+      return result;
+    } catch (error) {
+      console.error('🚨 Login error:', error);
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error(`Network error: Unable to connect to backend at ${url}. Make sure the backend is running and accessible.`);
+      }
+      throw error;
     }
-    
-    return response.json();
   }
 
   async getCurrentUser(token: string): Promise<{ user: User }> {
