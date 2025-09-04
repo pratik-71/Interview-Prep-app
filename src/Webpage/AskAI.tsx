@@ -277,7 +277,7 @@ const AskAI: React.FC = () => {
 								<textarea
 									value={question}
 									onChange={(e) => setQuestion(e.target.value)}
-									className="w-full border rounded-2xl px-6 py-4 text-base focus:outline-none focus:ring-2 transition-all duration-300 resize-none hover:scale-105"
+									className="w-full border rounded-2xl px-6 py-4 text-base focus:outline-none focus:ring-0 transition-all duration-300 resize-none hover:scale-105"
 									style={{ 
 										minHeight: '56px',
 										maxHeight: '120px',
@@ -289,14 +289,12 @@ const AskAI: React.FC = () => {
 									placeholder="Ask me anything..."
 									onFocus={(e) => {
 										gsap.to(e.currentTarget, { 
-											backgroundColor: primaryColor, 
 											boxShadow: `0 0 0 3px ${primaryColor}20`,
 											duration: 0.2 
 										});
 									}}
 									onBlur={(e) => {
 										gsap.to(e.currentTarget, { 
-											backgroundColor: inputColor, 
 											boxShadow: 'none',
 											duration: 0.2 
 										});
