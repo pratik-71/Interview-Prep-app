@@ -659,11 +659,32 @@ const TestComponent: React.FC = () => {
               onClick={() => {
                 // Move to previous question - no analytics needed
                 dispatch({ type: 'SET_CURRENT_QUESTION_INDEX', payload: state.currentQuestionIndex - 1 });
+                
+                // Clear all previous question state
+                dispatch({ type: 'SET_ANSWER', payload: '' });
+                dispatch({ type: 'SET_HAS_RESPONSE_ARRIVED', payload: false });
+                dispatch({ type: 'SET_IS_AUDIO_RESULT', payload: false });
+                dispatch({ type: 'SET_AUDIO_RESULT', payload: null });
+                dispatch({ type: 'SET_TEST_RESULT', payload: null });
+                dispatch({ type: 'SET_IS_EVALUATING_TEXT', payload: false });
+                
                 // Clear textarea using refs and state
                 textareaValueRef.current = '';
                 setTextareaValue('');
                 if (textareaRef.current) {
                   textareaRef.current.value = '';
+                }
+                
+                // Reset question start time for new question
+                questionStartTimeRef.current = Date.now();
+                
+                // Scroll to top of the page
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                
+                // Also scroll the main container if it exists
+                const mainContainer = document.querySelector('.min-h-screen');
+                if (mainContainer) {
+                  mainContainer.scrollTo({ top: 0, behavior: 'smooth' });
                 }
               }}
               disabled={state.currentQuestionIndex === 0}
@@ -716,11 +737,32 @@ const TestComponent: React.FC = () => {
 
                 // Move to next question
                 dispatch({ type: 'SET_CURRENT_QUESTION_INDEX', payload: state.currentQuestionIndex + 1 });
+                
+                // Clear all previous question state
+                dispatch({ type: 'SET_ANSWER', payload: '' });
+                dispatch({ type: 'SET_HAS_RESPONSE_ARRIVED', payload: false });
+                dispatch({ type: 'SET_IS_AUDIO_RESULT', payload: false });
+                dispatch({ type: 'SET_AUDIO_RESULT', payload: null });
+                dispatch({ type: 'SET_TEST_RESULT', payload: null });
+                dispatch({ type: 'SET_IS_EVALUATING_TEXT', payload: false });
+                
                 // Clear textarea using refs and state
                 textareaValueRef.current = '';
                 setTextareaValue('');
                 if (textareaRef.current) {
                   textareaRef.current.value = '';
+                }
+                
+                // Reset question start time for new question
+                questionStartTimeRef.current = Date.now();
+                
+                // Scroll to top of the page
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                
+                // Also scroll the main container if it exists
+                const mainContainer = document.querySelector('.min-h-screen');
+                if (mainContainer) {
+                  mainContainer.scrollTo({ top: 0, behavior: 'smooth' });
                 }
               }}
               disabled={state.currentQuestionIndex === allQuestions.length - 1}
