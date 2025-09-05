@@ -63,25 +63,32 @@ export class GeminiService {
     customNotes?: string
   ): Promise<InterviewQuestionsResponse> {
     try {
+      console.log('🚀 Generating questions for:', { field, subfield, customNotes });
       const prompt = this.buildPrompt(field, subfield, customNotes);
+      console.log('📝 Generated prompt:', prompt.substring(0, 200) + '...');
       
       const result = await this.model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
       
+      console.log('🤖 Gemini response length:', text.length);
       return this.parseGeminiResponse(text);
     } catch (error) {
+      console.error('❌ Error generating questions:', error);
       throw new Error('Failed to generate interview questions. Please try again.');
     }
   }
 
   private buildPrompt(field: string, subfield: string, customNotes?: string): string {
-    const basePrompt = `Generate 24 interview questions for ${field} - ${subfield} position.
-    
+    console.log('🔍 Building prompt for field:', field, 'subfield:', subfield);
+    const basePrompt = `Generate 24 interview questions specifically for ${field} programming language/technology - ${subfield} position.
+
+CRITICAL: All questions must be about ${field} specifically, NOT JavaScript or any other language.
+
 Requirements:
-- 8 Beginner questions (basic concepts, fundamental knowledge)
-- 8 Intermediate questions (practical experience, problem-solving)
-- 8 Expert questions (advanced concepts, leadership, architecture)
+- 8 Beginner questions (basic ${field} concepts, fundamental knowledge)
+- 8 Intermediate questions (practical ${field} experience, problem-solving)
+- 8 Expert questions (advanced ${field} concepts, leadership, architecture)
 
 ${customNotes ? `Additional focus areas: ${customNotes}` : ''}
 
@@ -91,6 +98,7 @@ IMPORTANT: Create REALISTIC INTERVIEW ANSWERS:
 - Include practical examples and real-world scenarios
 - Sound like how an experienced developer would actually speak in an interview
 - Focus on demonstrating knowledge through examples, not just definitions
+- All answers must be specific to ${field} programming language/technology
 
 Format the response as a JSON object with this exact structure:
 {
@@ -108,7 +116,7 @@ Format the response as a JSON object with this exact structure:
   "expert": [...]
 }
 
-Make questions relevant and practical. Focus on real-world scenarios that interviewers actually ask.`;
+Make questions relevant and practical. Focus on real-world scenarios that interviewers actually ask for ${field} developers.`;
 
     return basePrompt;
   }

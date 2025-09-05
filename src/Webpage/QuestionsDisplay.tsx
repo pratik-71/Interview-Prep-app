@@ -1,16 +1,77 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useReducer } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useThemeStore } from '../zustand_store/theme_store';
 import { useQuestionsStore } from '../zustand_store/questions_store';
 import { sampleQuestions } from '../data/sampleQuestions';
-import { isMobilePlatform } from '../utils/mobileDetection';
+
+// State management with reducer pattern
+interface ExpansionState {
+  openId: string | null;
+  heights: { [key: string]: number };
+  lastInteraction: number;
+  isAnimating: boolean;
+}
+
+type ExpansionAction = 
+  | { type: 'TOGGLE'; id: string }
+  | { type: 'CLOSE_ALL' }
+  | { type: 'SET_HEIGHT'; id: string; height: number }
+  | { type: 'SET_ANIMATING'; isAnimating: boolean }
+  | { type: 'RESET' };
+
+const expansionReducer = (state: ExpansionState, action: ExpansionAction): ExpansionState => {
+  switch (action.type) {
+    case 'TOGGLE':
+      return {
+        ...state,
+        openId: state.openId === action.id ? null : action.id,
+        lastInteraction: Date.now(),
+        isAnimating: true
+      };
+    case 'CLOSE_ALL':
+      return {
+        ...state,
+        openId: null,
+        lastInteraction: Date.now()
+      };
+    case 'SET_HEIGHT':
+      return {
+        ...state,
+        heights: { ...state.heights, [action.id]: action.height }
+      };
+    case 'SET_ANIMATING':
+      return {
+        ...state,
+        isAnimating: action.isAnimating
+      };
+    case 'RESET':
+      return {
+        openId: null,
+        heights: {},
+        lastInteraction: 0,
+        isAnimating: false
+      };
+    default:
+      return state;
+  }
+};
 
 const QuestionsDisplay: React.FC = () => {
   const { questions, setQuestions } = useQuestionsStore();
-  const [openQuestionId, setOpenQuestionId] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<'beginner' | 'intermediate' | 'expert'>('beginner');
-  const [isMobile, setIsMobile] = useState(false);
-  const [expandedHeights, setExpandedHeights] = useState<{ [key: string]: number }>({});
+  const [touchState, setTouchState] = useState<{
+    isPressed: boolean;
+    startX: number;
+    startY: number;
+  }>({ isPressed: false, startX: 0, startY: 0 });
+  
+  const [expansionState, dispatch] = useReducer(expansionReducer, {
+    openId: null,
+    heights: {},
+    lastInteraction: 0,
+    isAnimating: false
+  });
+  
   const navigate = useNavigate();
   const { 
     primaryColor, 
@@ -22,83 +83,103 @@ const QuestionsDisplay: React.FC = () => {
 
   // Refs for measuring answer heights
   const answerRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const interactionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Detect mobile platform
-  useEffect(() => {
-    setIsMobile(isMobilePlatform());
-  }, []);
 
-  // Measure answer heights when questions change
+  // Reset state when questions or category change
   useEffect(() => {
     if (questions && questions[activeCategory]) {
-      // Reset expanded heights when questions change
-      setExpandedHeights({});
-      setOpenQuestionId(null);
+      dispatch({ type: 'RESET' });
     }
   }, [questions, activeCategory]);
 
-  // Reset expanded state when switching categories
+  // Cleanup timeout on unmount
   useEffect(() => {
-    setOpenQuestionId(null);
-  }, [activeCategory]);
-
-  const toggleQuestionExpansion = (questionId: string) => {
-    if (openQuestionId === questionId) {
-      // Collapse the current question
-      setOpenQuestionId(null);
-    } else {
-      // If another question is open, close it first
-      if (openQuestionId) {
-        setOpenQuestionId(null);
-        // Small delay before opening the new question for smooth transition
-        setTimeout(() => {
-          setOpenQuestionId(questionId);
-          setTimeout(() => {
-            if (answerRefs.current[questionId]) {
-              const height = answerRefs.current[questionId]?.scrollHeight || 0;
-              setExpandedHeights(prev => ({ ...prev, [questionId]: height }));
-            }
-          }, 10);
-        }, 150);
-      } else {
-        // No question is open, open this one directly
-        setOpenQuestionId(questionId);
-        setTimeout(() => {
-          if (answerRefs.current[questionId]) {
-            const height = answerRefs.current[questionId]?.scrollHeight || 0;
-            setExpandedHeights(prev => ({ ...prev, [questionId]: height }));
-          }
-        }, 10);
+    return () => {
+      if (interactionTimeoutRef.current) {
+        clearTimeout(interactionTimeoutRef.current);
       }
+    };
+  }, []);
+
+  // Robust interaction handlers
+  const toggleQuestionExpansion = useCallback((questionId: string) => {
+    // Prevent rapid interactions
+    const now = Date.now();
+    if (now - expansionState.lastInteraction < 200) return;
+    
+    dispatch({ type: 'TOGGLE', id: questionId });
+    
+    // Measure height after animation starts
+    if (expansionState.openId !== questionId) {
+      interactionTimeoutRef.current = setTimeout(() => {
+        if (answerRefs.current[questionId]) {
+          const height = answerRefs.current[questionId]?.scrollHeight || 0;
+          dispatch({ type: 'SET_HEIGHT', id: questionId, height });
+        }
+        dispatch({ type: 'SET_ANIMATING', isAnimating: false });
+      }, 50);
     }
-  };
+  }, [expansionState.openId, expansionState.lastInteraction]);
 
-  const handleCategoryClick = (category: 'beginner' | 'intermediate' | 'expert') => {
+  const handleCategoryClick = useCallback((category: 'beginner' | 'intermediate' | 'expert') => {
     setActiveCategory(category);
-    // Close any open question when switching categories
-    setOpenQuestionId(null);
-  };
+    dispatch({ type: 'CLOSE_ALL' });
+  }, []);
 
-  const handleStartTest = () => {
+  const handleStartTest = useCallback(() => {
     if (questions) {
       navigate('/test');
     }
-  };
+  }, [questions, navigate]);
 
-  // Mobile-friendly event handlers
-  const handleTouchStart = (e: React.TouchEvent, questionId: string) => {
-    if (isMobile) {
+  // Universal interaction handler
+  const handleInteraction = useCallback((e: React.MouseEvent | React.TouchEvent, questionId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Prevent double-triggering
+    if (e.type === 'touchend' && (e as React.TouchEvent).changedTouches[0]) {
+      const touch = (e as React.TouchEvent).changedTouches[0];
+      const distance = Math.sqrt(
+        Math.pow(touch.clientX - touchState.startX, 2) +
+        Math.pow(touch.clientY - touchState.startY, 2)
+      );
+      
+      // Only trigger if it's a tap (not a swipe)
+      if (distance > 10) return;
+    }
+    
+    toggleQuestionExpansion(questionId);
+  }, [toggleQuestionExpansion, touchState]);
+
+  const handleCategoryInteraction = useCallback((e: React.MouseEvent | React.TouchEvent, category: 'beginner' | 'intermediate' | 'expert') => {
+    e.preventDefault();
+    e.stopPropagation();
+    handleCategoryClick(category);
+  }, [handleCategoryClick]);
+
+  // Touch state management
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    setTouchState({
+      isPressed: true,
+      startX: touch.clientX,
+      startY: touch.clientY
+    });
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    setTouchState(prev => ({ ...prev, isPressed: false }));
+  }, []);
+
+  // Keyboard accessibility
+  const handleKeyDown = useCallback((e: React.KeyboardEvent, questionId: string) => {
+    if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       toggleQuestionExpansion(questionId);
     }
-  };
-
-  const handleTouchStartCategory = (e: React.TouchEvent, category: 'beginner' | 'intermediate' | 'expert') => {
-    if (isMobile) {
-      e.preventDefault();
-      handleCategoryClick(category);
-    }
-  };
+  }, [toggleQuestionExpansion]);
 
   const renderHeader = () => (
     <div className='flex items-center justify-between mb-1 sm:mb-2 md:mb-2 px-2 pt-2'>
@@ -140,8 +221,10 @@ const QuestionsDisplay: React.FC = () => {
                 color: isActive ? 'white' : colors.text,
                 border: `2px solid ${isActive ? primaryColor : colors.border}`
               }}
-              onClick={() => handleCategoryClick(category)}
-              onTouchStart={(e) => handleTouchStartCategory(e, category)}
+              onClick={(e) => handleCategoryInteraction(e, category)}
+              onTouchEnd={(e) => handleCategoryInteraction(e, category)}
+              onTouchStart={handleTouchStart}
+              onTouchCancel={handleTouchEnd}
             >
               <span className='capitalize text-xs sm:text-sm md:text-sm lg:text-base'>
                 {category}
@@ -167,19 +250,28 @@ const QuestionsDisplay: React.FC = () => {
       expert: `${primaryColor}40`
     };
     const borderColor = categoryColors[activeCategory];
-    const isExpanded = openQuestionId === question.id;
-    const answerHeight = expandedHeights[question.id] || 0;
+    const isExpanded = expansionState.openId === question.id;
+    const answerHeight = expansionState.heights[question.id] || 0;
 
     return (
       <div
         key={question.id}
-        className='question-card p-3 sm:p-4 md:p-4 lg:p-5 rounded-lg sm:rounded-xl border-2 shadow-md sm:shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer'
+        className={`question-card p-3 sm:p-4 md:p-4 lg:p-5 rounded-lg sm:rounded-xl border-2 shadow-md sm:shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer ${
+          touchState.isPressed ? 'scale-98' : ''
+        }`}
         style={{
           borderColor: borderColor,
           backgroundColor: surfaceColor
         }}
-        onClick={() => toggleQuestionExpansion(question.id)}
-        onTouchStart={(e) => handleTouchStart(e, question.id)}
+        onClick={(e) => handleInteraction(e, question.id)}
+        onTouchEnd={(e) => handleInteraction(e, question.id)}
+        onTouchStart={handleTouchStart}
+        onTouchCancel={handleTouchEnd}
+        onKeyDown={(e) => handleKeyDown(e, question.id)}
+        role="button"
+        tabIndex={0}
+        aria-expanded={isExpanded}
+        aria-controls={`answer-${question.id}`}
       >
         <div className='flex items-start space-x-2 sm:space-x-3 md:space-x-3'>
           <div className='w-8 h-8 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-full flex items-center justify-center text-white text-sm sm:text-base md:text-base font-bold flex-shrink-0'
@@ -214,8 +306,9 @@ const QuestionsDisplay: React.FC = () => {
           </div>
         </div>
 
-        {/* Answer Section with Improved CSS Transitions */}
+        {/* Answer Section with Robust Animations */}
         <div 
+          id={`answer-${question.id}`}
           className='answer-section overflow-hidden transition-all duration-300 ease-out'
           style={{ 
             maxHeight: isExpanded ? `${answerHeight + 32}px` : '0px',
@@ -223,7 +316,8 @@ const QuestionsDisplay: React.FC = () => {
             transform: isExpanded ? 'translateY(0)' : 'translateY(-8px)',
             marginTop: isExpanded ? '16px' : '0px',
             paddingTop: isExpanded ? '16px' : '0px',
-            borderTop: isExpanded ? `1px solid ${primaryColor}20` : '1px solid transparent'
+            borderTop: isExpanded ? `1px solid ${primaryColor}20` : '1px solid transparent',
+            visibility: isExpanded ? 'visible' : 'hidden'
           }}
         >
           <div 

@@ -11,6 +11,11 @@
   display: none;  /* Safari and Chrome */
 }
 
+/* Touch feedback classes */
+.scale-98 {
+  transform: scale(0.98);
+}
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 :root {
