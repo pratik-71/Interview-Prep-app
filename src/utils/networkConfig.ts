@@ -32,16 +32,17 @@ export class NetworkConfig {
                             !window.location.hostname.includes('127.0.0.1'));
         
         if (isProduction) {
-          // Production: use environment variable or default
-          this.baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:10000';
+          // Production: use production backend URL
+          this.baseUrl = process.env.REACT_APP_API_URL || 'https://interview-prep-backend-viok.onrender.com';
         } else {
           // Development: use localhost
           this.baseUrl = 'http://localhost:10000';
         }
       }
     } else {
-      // Fallback for non-browser environments
-      this.baseUrl = process.env.REACT_APP_BACKEND_URL || process.env.REACT_APP_API_URL || 'http://localhost:10000';
+      // Fallback for non-browser environments (Capacitor mobile apps)
+      // Mobile apps should use production backend
+      this.baseUrl = process.env.REACT_APP_BACKEND_URL || process.env.REACT_APP_API_URL || 'https://interview-prep-backend-viok.onrender.com';
     }
     
     console.log('🌐 Initialized base URL:', this.baseUrl);
