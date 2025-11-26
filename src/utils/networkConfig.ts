@@ -67,12 +67,13 @@ export class NetworkConfig {
 
   // Test network connectivity
   public async testConnection(): Promise<boolean> {
+    // Test by trying to access the base URL
     try {
-      const response = await fetch(`${this.baseUrl}/health`, {
+      const response = await fetch(this.baseUrl, {
         method: 'GET',
         timeout: 5000
       } as any);
-      return response.ok;
+      return response.ok || response.status !== 404;
     } catch (error) {
       console.error('❌ Network test failed:', error);
       return false;
@@ -81,19 +82,19 @@ export class NetworkConfig {
 
   // Auto-detect the correct IP address for physical devices
   public async autoDetectIP(): Promise<string | null> {
-    // Since we're using production URL, just test the current URL
+    // Since we're using production URL, just return the current base URL
     try {
-      const response = await fetch(`${this.baseUrl}/health`, {
+      const response = await fetch(this.baseUrl, {
         method: 'GET',
         timeout: 5000
       } as any);
       
-      if (response.ok) {
-        console.log('✅ Production backend is accessible');
+      if (response.ok || response.status !== 404) {
+        console.log('✅ Backend is accessible');
         return this.baseUrl;
       }
     } catch (error) {
-      console.error('❌ Production backend not accessible:', error);
+      console.error('❌ Backend not accessible:', error);
     }
     
     return null;
