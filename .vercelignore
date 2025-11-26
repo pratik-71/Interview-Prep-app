@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Build outputs (Vercel will build these)
+build/
+
+# Mobile app files
+android/
+ios/
+
+# Development files
+*.log
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE
+.vscode/
+.idea/
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+!README.md
+
+# Capacitor
+capacitor.config.ts
+

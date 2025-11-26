@@ -19,22 +19,29 @@ export class NetworkConfig {
   private initializeBaseUrl() {
     // Check if we're in a browser environment (not Capacitor)
     if (typeof window !== 'undefined') {
-      // In browser, check if we're on Vercel or production
-      const isProduction = process.env.NODE_ENV === 'production' || 
-                          (window.location.hostname !== 'localhost' && 
-                          !window.location.hostname.includes('127.0.0.1'));
+      // First, check for environment variable (set in Vercel)
+      const envBackendUrl = process.env.REACT_APP_BACKEND_URL;
       
-      if (isProduction) {
-        // Use relative API path for Vercel deployment
-        // Vercel will serve API routes at /api
-        this.baseUrl = '/api';
+      if (envBackendUrl) {
+        // Use environment variable if set (for Vercel deployment)
+        this.baseUrl = envBackendUrl;
       } else {
-        // Development: use localhost
-        this.baseUrl = 'http://localhost:10000';
+        // Check if we're in production
+        const isProduction = process.env.NODE_ENV === 'production' || 
+                            (window.location.hostname !== 'localhost' && 
+                            !window.location.hostname.includes('127.0.0.1'));
+        
+        if (isProduction) {
+          // Production: use environment variable or default
+          this.baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:10000';
+        } else {
+          // Development: use localhost
+          this.baseUrl = 'http://localhost:10000';
+        }
       }
     } else {
       // Fallback for non-browser environments
-      this.baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:10000';
+      this.baseUrl = process.env.REACT_APP_BACKEND_URL || process.env.REACT_APP_API_URL || 'http://localhost:10000';
     }
     
     console.log('🌐 Initialized base URL:', this.baseUrl);
