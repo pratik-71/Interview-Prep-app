@@ -1566,12 +1566,15 @@ const RecordAnswer = ({dispatch, currentQuestion, currentQuestionIndex, updateQu
                       dispatch({ type: 'SET_ANSWER', payload: '' }); // Clear the input box
                       dispatch({ type: 'SET_AUDIO_RESULT', payload: evaluation });
                       dispatch({ type: 'SET_IS_AUDIO_RESULT', payload: true });
+                      dispatch({ type: 'SET_HAS_RESPONSE_ARRIVED', payload: true }); // Show the results
                       dispatch({ type: 'SET_SHOW_RECORDING_MODAL', payload: false });
                       // handleSubmitAudio(); // This function is no longer needed here
                       updateQuestionMarks(currentQuestionIndex, evaluation.marks, evaluation);
                     } catch (error) {
                       // Error evaluating audio
+                      console.error('Error evaluating audio:', error);
                       alert('Failed to evaluate audio. Please try again.');
+                      setIsEvaluating(false);
                     } finally {
                       setIsEvaluating(false);
                     }

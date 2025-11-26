@@ -1,4 +1,4 @@
-package com.example.app;
+package com.prepmaster.app;
 
 import com.getcapacitor.BridgeActivity;
 

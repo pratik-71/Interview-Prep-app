@@ -1,12 +1,13 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../zustand_store/auth_store';
 import { useThemeStore } from '../../zustand_store/theme_store';
 import { gsap } from 'gsap';
+import DashboardService, { DashboardData, RecentActivity } from '../../services/dashboardService';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  const { user, token } = useAuthStore();
   const { 
     primaryColor, 
     backgroundColor, 
@@ -17,6 +18,12 @@ const Dashboard: React.FC = () => {
     borderColor
   } = useThemeStore();
 
+  // Dashboard data state
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   // Refs for animations
   const welcomeSectionRef = useRef<HTMLDivElement>(null);
   const statsGridRef = useRef<HTMLDivElement>(null);
@@ -24,6 +31,34 @@ const Dashboard: React.FC = () => {
   const avatarRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const subtitleRef = useRef<HTMLParagraphElement>(null);
+
+  // Fetch dashboard data
+  const fetchDashboardData = useCallback(async () => {
+    if (!token) {
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const dashboardService = DashboardService.getInstance();
+      const data = await dashboardService.getDashboardData(token);
+      
+      setDashboardData(data);
+      setRecentActivity(dashboardService.formatRecentActivity(data));
+    } catch (err) {
+      console.error('Error fetching dashboard data:', err);
+      setError('Failed to load dashboard data');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
 
   // Entrance animations
   useEffect(() => {
@@ -131,7 +166,7 @@ const Dashboard: React.FC = () => {
             
             <div 
               ref={statsGridRef}
-              className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 lg:gap-5"
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-5"
             >
               <div 
                 className="rounded-xl p-4 md:p-5 lg:p-6 transition-all duration-300 hover:scale-105 cursor-pointer"
@@ -164,7 +199,9 @@ const Dashboard: React.FC = () => {
                   </div>
                   <div>
                     <p className="text-sm font-medium transition-colors duration-300" style={{ color: textSecondaryColor }}>Practice sessions</p>
-                    <p className="text-base md:text-lg lg:text-xl font-semibold transition-colors duration-300" style={{ color: textColor }}>0</p>
+                    <p className="text-base md:text-lg lg:text-xl font-semibold transition-colors duration-300" style={{ color: textColor }}>
+                      {isLoading ? '...' : dashboardData?.progress?.total_tests || 0}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -181,7 +218,28 @@ const Dashboard: React.FC = () => {
                   </div>
                   <div>
                     <p className="text-sm font-medium transition-colors duration-300" style={{ color: textSecondaryColor }}>Progress score</p>
-                    <p className="text-base md:text-lg lg:text-xl font-semibold transition-colors duration-300" style={{ color: textColor }}>0%</p>
+                    <p className="text-base md:text-lg lg:text-xl font-semibold transition-colors duration-300" style={{ color: textColor }}>
+                      {isLoading ? '...' : `${dashboardData?.progress?.average_score?.toFixed(1) || 0}%`}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div 
+                className="rounded-xl p-4 md:p-5 lg:p-6 transition-all duration-300 hover:scale-105 cursor-pointer"
+                style={{ backgroundColor: cardColor }}
+              >
+                <div className="flex items-center space-x-3 md:space-x-4">
+                  <div className="h-9 w-9 md:h-10 md:w-10 lg:h-11 lg:w-11 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110" style={{ backgroundColor: primaryColor }}>
+                    <svg className="h-5 w-5 md:h-5 md:w-5 lg:h-6 lg:w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium transition-colors duration-300" style={{ color: textSecondaryColor }}>Questions answered</p>
+                    <p className="text-base md:text-lg lg:text-xl font-semibold transition-colors duration-300" style={{ color: textColor }}>
+                      {isLoading ? '...' : dashboardData?.progress?.total_questions || 0}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -312,7 +370,7 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Quick Stats */}
+        {/* Recent Activity */}
         <div className="mt-8">
           <div 
             className="rounded-2xl shadow-lg p-6 border transition-colors duration-300"
@@ -321,18 +379,104 @@ const Dashboard: React.FC = () => {
               borderColor: borderColor 
             }}
           >
-            <h3 className="text-xl font-bold mb-4 transition-colors duration-300" style={{ color: textColor }}>
-              Recent Activity
-            </h3>
-            <div className="text-center py-8">
-              <div className="h-16 w-16 mx-auto rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: primaryColor }}>
-                <svg className="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold transition-colors duration-300" style={{ color: textColor }}>
+                Recent Activity
+              </h3>
+              <button
+                onClick={fetchDashboardData}
+                disabled={isLoading}
+                className="p-2 rounded-lg transition-all duration-300 hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ backgroundColor: primaryColor }}
+                title="Refresh data"
+              >
+                <svg 
+                  className={`h-5 w-5 text-white ${isLoading ? 'animate-spin' : ''}`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
-              </div>
-              <p className="transition-colors duration-300" style={{ color: textSecondaryColor }}>No recent activity</p>
-              <p className="text-sm mt-1 transition-colors duration-300" style={{ color: textSecondaryColor }}>Start practicing to see your progress here</p>
+              </button>
             </div>
+            
+            {isLoading ? (
+              <div className="text-center py-8">
+                <div className="h-16 w-16 mx-auto rounded-full flex items-center justify-center mb-4 animate-pulse" style={{ backgroundColor: primaryColor }}>
+                  <svg className="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <p className="transition-colors duration-300" style={{ color: textSecondaryColor }}>Loading...</p>
+              </div>
+            ) : error ? (
+              <div className="text-center py-8">
+                <div className="h-16 w-16 mx-auto rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: '#ef4444' }}>
+                  <svg className="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                </div>
+                <p className="transition-colors duration-300" style={{ color: textSecondaryColor }}>{error}</p>
+                <button 
+                  onClick={fetchDashboardData}
+                  className="mt-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-300"
+                  style={{ backgroundColor: primaryColor, color: 'white' }}
+                >
+                  Retry
+                </button>
+              </div>
+            ) : recentActivity.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="h-16 w-16 mx-auto rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: primaryColor }}>
+                  <svg className="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <p className="transition-colors duration-300" style={{ color: textSecondaryColor }}>No recent activity</p>
+                <p className="text-sm mt-1 transition-colors duration-300" style={{ color: textSecondaryColor }}>Start practicing to see your progress here</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {recentActivity.map((activity, index) => (
+                  <div 
+                    key={activity.id}
+                    className="flex items-center space-x-4 p-4 rounded-xl transition-all duration-300 hover:scale-105 cursor-pointer"
+                    style={{ backgroundColor: cardColor }}
+                  >
+                    <div className="h-10 w-10 rounded-full flex items-center justify-center" style={{ backgroundColor: primaryColor }}>
+                      {activity.type === 'test' ? (
+                        <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                      ) : (
+                        <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium transition-colors duration-300 truncate" style={{ color: textColor }}>
+                        {activity.title}
+                      </p>
+                      <p className="text-sm transition-colors duration-300 truncate" style={{ color: textSecondaryColor }}>
+                        {activity.description}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs transition-colors duration-300" style={{ color: textSecondaryColor }}>
+                        {new Date(activity.date).toLocaleDateString()}
+                      </p>
+                      {activity.score && (
+                        <p className="text-sm font-medium transition-colors duration-300" style={{ color: primaryColor }}>
+                          {activity.score.toFixed(1)}%
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

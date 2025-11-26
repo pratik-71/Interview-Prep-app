@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // Initialize Gemini AI
-const genAI = new GoogleGenerativeAI('AIzaSyDE47qB81yV_1CS1ZyzfXkdu-vl_ahHsQw');
+const genAI = new GoogleGenerativeAI('AIzaSyCgQQG3yXqtK0tr4azQcH4TYusoRxfKThE');
 
 export interface InterviewQuestion {
   id: string;
@@ -35,7 +35,7 @@ export class GeminiService {
   private model: any;
 
   private constructor() {
-    this.model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    this.model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
   }
 
   async askQuestion(question: string, systemInstruction?: string): Promise<string> {
@@ -55,6 +55,19 @@ export class GeminiService {
       GeminiService.instance = new GeminiService();
     }
     return GeminiService.instance;
+  }
+
+  // Helper method to list available models (for debugging)
+  static async listAvailableModels(): Promise<void> {
+    try {
+      // Note: This requires using the REST API directly
+      const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models?key=AIzaSyCgQQG3yXqtK0tr4azQcH4TYusoRxfKThE');
+      const data = await response.json();
+      console.log('Available Gemini models:', data);
+      return data;
+    } catch (error) {
+      console.error('Error listing models:', error);
+    }
   }
 
   async generateInterviewQuestions(
@@ -218,7 +231,7 @@ Keep feedback brief and actionable. Be encouraging but honest.`;
       const base64Audio = btoa(Array.from(uint8Array).map(byte => String.fromCharCode(byte)).join(''))
       
       // Get the model that supports audio
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
       
       const prompt = `You are an expert interview evaluator. Analyze this audio answer to the question: "${question}"
 

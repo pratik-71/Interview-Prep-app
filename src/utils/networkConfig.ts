@@ -17,8 +17,25 @@ export class NetworkConfig {
   }
 
   private initializeBaseUrl() {
-    // Use production backend URL for all platforms
-    this.baseUrl = 'https://interview-prep-backend-viok.onrender.com';
+    // Check if we're in a browser environment (not Capacitor)
+    if (typeof window !== 'undefined') {
+      // In browser, check if we're on Vercel or production
+      const isProduction = process.env.NODE_ENV === 'production' || 
+                          (window.location.hostname !== 'localhost' && 
+                          !window.location.hostname.includes('127.0.0.1'));
+      
+      if (isProduction) {
+        // Use relative API path for Vercel deployment
+        // Vercel will serve API routes at /api
+        this.baseUrl = '/api';
+      } else {
+        // Development: use localhost
+        this.baseUrl = 'http://localhost:10000';
+      }
+    } else {
+      // Fallback for non-browser environments
+      this.baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:10000';
+    }
     
     console.log('🌐 Initialized base URL:', this.baseUrl);
   }
