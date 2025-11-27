@@ -3,12 +3,21 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 // Get Gemini API key from environment variable
 const GEMINI_API_KEY = process.env.REACT_APP_GEMINI_API_KEY || '';
 
+// Log API key status (without exposing the key)
 if (!GEMINI_API_KEY) {
   console.warn('⚠️ REACT_APP_GEMINI_API_KEY is not set. Gemini features will not work.');
+  console.warn('💡 To fix: Add REACT_APP_GEMINI_API_KEY=your-key-here to your .env file and restart the dev server');
+} else {
+  console.log('✅ Gemini API key loaded successfully');
 }
 
 // Initialize Gemini AI
 const genAI = GEMINI_API_KEY ? new GoogleGenerativeAI(GEMINI_API_KEY) : null;
+
+// Helper function to check if API key is available
+export function isGeminiAvailable(): boolean {
+  return !!GEMINI_API_KEY && !!genAI;
+}
 
 export interface InterviewQuestion {
   id: string;
@@ -50,19 +59,36 @@ export class GeminiService {
 
   async askQuestion(question: string, systemInstruction?: string): Promise<string> {
     try {
+      console.log('📤 Making Gemini API call for question:', question.substring(0, 50) + '...');
       const prompt = `${systemInstruction ? systemInstruction + "\n\n" : ''}User question: ${question}`;
       const result = await this.model.generateContent(prompt);
       const response = await result.response;
       const text = typeof response.text === 'function' ? response.text() : String(response);
+      console.log('✅ Gemini API response received, length:', text.length);
       return text?.trim() || 'No response';
-    } catch (error) {
-      return 'Sorry, I could not get an answer right now. Please try again later.';
+    } catch (error: any) {
+      console.error('❌ Gemini API call failed:', error);
+      console.error('Error details:', error.message, error.stack);
+      throw new Error(`Gemini API error: ${error.message || 'Unknown error'}`);
     }
   }
 
   public static getInstance(): GeminiService {
+    if (!GEMINI_API_KEY) {
+      const error = new Error('Gemini API key is not configured. Please set REACT_APP_GEMINI_API_KEY environment variable.');
+      console.error('❌ Gemini Service Error:', error.message);
+      console.error('💡 Make sure REACT_APP_GEMINI_API_KEY is set in your .env file and restart the dev server');
+      throw error;
+    }
+    
     if (!GeminiService.instance) {
-      GeminiService.instance = new GeminiService();
+      try {
+        GeminiService.instance = new GeminiService();
+        console.log('✅ Gemini Service initialized successfully');
+      } catch (error) {
+        console.error('❌ Failed to initialize Gemini Service:', error);
+        throw error;
+      }
     }
     return GeminiService.instance;
   }
@@ -91,6 +117,7 @@ export class GeminiService {
   ): Promise<InterviewQuestionsResponse> {
     try {
       console.log('🚀 Generating questions for:', { field, subfield, customNotes });
+      console.log('📤 Making Gemini API call...');
       const prompt = this.buildPrompt(field, subfield, customNotes);
       console.log('📝 Generated prompt:', prompt.substring(0, 200) + '...');
       
@@ -98,11 +125,13 @@ export class GeminiService {
       const response = await result.response;
       const text = response.text();
       
-      console.log('🤖 Gemini response length:', text.length);
+      console.log('✅ Gemini API response received, length:', text.length);
+      console.log('🤖 Parsing response...');
       return this.parseGeminiResponse(text);
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error generating questions:', error);
-      throw new Error('Failed to generate interview questions. Please try again.');
+      console.error('Error details:', error.message, error.stack);
+      throw new Error(`Failed to generate interview questions: ${error.message || 'Unknown error'}`);
     }
   }
 
@@ -204,8 +233,10 @@ Return your response in this exact JSON format:
 Keep feedback brief and actionable. Be encouraging but honest.`;
     
     try {
+      console.log('📤 Making Gemini API call for answer evaluation...');
       const result = await this.model.generateContent(prompt);
       const response = await result.response.text();
+      console.log('✅ Gemini API response received for evaluation');
       
       // Extract JSON from the response
       const jsonMatch = response.match(/\{[\s\S]*\}/);
@@ -227,12 +258,11 @@ Keep feedback brief and actionable. Be encouraging but honest.`;
         marks: marks,
         feedback: parsed.feedback
       };
-    } catch (error) {
-      // Return default response if evaluation fails
-      return {
-        marks: 5,
-        feedback: "Unable to evaluate answer at this time. Please try again or contact support."
-      };
+    } catch (error: any) {
+      console.error('❌ Error evaluating answer:', error);
+      console.error('Error details:', error.message);
+      // Throw error instead of returning default - let the caller handle it
+      throw new Error(`Failed to evaluate answer: ${error.message || 'Unknown error'}`);
     }
   }
 

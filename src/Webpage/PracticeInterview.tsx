@@ -86,8 +86,17 @@ const PracticeInterview: React.FC = () => {
       setQuestions(generatedQuestions);
       navigate('/practice/questions');
       setIsLoading(false);
-    } catch (err) {
+    } catch (err: any) {
       setIsLoading(false);
+      console.error('Error generating questions:', err);
+      
+      // Check if it's an API key error
+      if (err.message && err.message.includes('API key')) {
+        alert('⚠️ Gemini API key is not configured!\n\nPlease set REACT_APP_GEMINI_API_KEY in your .env file and restart the development server.');
+      } else {
+        alert(`Failed to generate questions: ${err.message || 'Unknown error'}\n\nFalling back to sample questions.`);
+      }
+      
       // Fallback to sample questions on error
       setQuestions(sampleQuestions);
       navigate('/practice/questions');

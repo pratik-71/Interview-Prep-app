@@ -98,8 +98,16 @@ const AskAI: React.FC = () => {
 			);
 			setMessages(prev => [...prev, { role: 'ai', content: response }]);
 			setQuestion('');
-		} catch (err) {
-			const msg = 'Sorry, something went wrong. Please try again later.';
+		} catch (err: any) {
+			console.error('Error asking question:', err);
+			let msg = 'Sorry, something went wrong. Please try again later.';
+			
+			if (err.message && err.message.includes('API key')) {
+				msg = '⚠️ Gemini API key is not configured. Please set REACT_APP_GEMINI_API_KEY in your .env file and restart the development server.';
+			} else if (err.message) {
+				msg = `Error: ${err.message}`;
+			}
+			
 			setMessages(prev => [...prev, { role: 'ai', content: msg }]);
 		} finally {
 			setIsLoading(false);

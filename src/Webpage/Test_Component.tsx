@@ -459,9 +459,17 @@ const TestComponent: React.FC = () => {
         // Don't clear the answer - keep it visible for the user to see
         // Text answer evaluated
       }
-    } catch (error) {
-              // Error evaluating text answer
-      alert('Failed to evaluate answer. Please try again.');
+    } catch (error: any) {
+      console.error('Error evaluating text answer:', error);
+      let errorMsg = 'Failed to evaluate answer. Please try again.';
+      
+      if (error.message && error.message.includes('API key')) {
+        errorMsg = '⚠️ Gemini API key is not configured!\n\nPlease set REACT_APP_GEMINI_API_KEY in your .env file and restart the development server.';
+      } else if (error.message) {
+        errorMsg = `Error: ${error.message}`;
+      }
+      
+      alert(errorMsg);
     } finally {
       dispatch({ type: 'SET_IS_EVALUATING_TEXT', payload: false });
     }
@@ -1570,10 +1578,18 @@ const RecordAnswer = ({dispatch, currentQuestion, currentQuestionIndex, updateQu
                       dispatch({ type: 'SET_SHOW_RECORDING_MODAL', payload: false });
                       // handleSubmitAudio(); // This function is no longer needed here
                       updateQuestionMarks(currentQuestionIndex, evaluation.marks, evaluation);
-                    } catch (error) {
+                    } catch (error: any) {
                       // Error evaluating audio
                       console.error('Error evaluating audio:', error);
-                      alert('Failed to evaluate audio. Please try again.');
+                      let errorMsg = 'Failed to evaluate audio. Please try again.';
+                      
+                      if (error.message && error.message.includes('API key')) {
+                        errorMsg = '⚠️ Gemini API key is not configured!\n\nPlease set REACT_APP_GEMINI_API_KEY in your .env file and restart the development server.';
+                      } else if (error.message) {
+                        errorMsg = `Error: ${error.message}`;
+                      }
+                      
+                      alert(errorMsg);
                       setIsEvaluating(false);
                     } finally {
                       setIsEvaluating(false);
