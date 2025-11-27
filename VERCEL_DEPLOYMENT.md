@@ -118,3 +118,4 @@ If React Router routes return 404:
 1. Verify `vercel.json` has the rewrite rule for `index.html`
 2. Check that all routes are properly configured
 
+
