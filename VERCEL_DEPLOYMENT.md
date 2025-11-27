@@ -17,17 +17,20 @@ npm i -g vercel
 
 ### 2. Set Environment Variables
 
-Before deploying, you need to set the following environment variable in Vercel:
+Before deploying, you need to set the following environment variables in Vercel:
 
 1. Go to your Vercel project settings
 2. Navigate to "Environment Variables"
-3. Add the following variable:
+3. Add the following variables:
 
 ```
 REACT_APP_BACKEND_URL=https://your-backend-url.com
+REACT_APP_GEMINI_API_KEY=your-gemini-api-key
 ```
 
-**Important:** Replace `https://your-backend-url.com` with your actual backend API URL.
+**Important:** 
+- Replace `https://your-backend-url.com` with your actual backend API URL
+- Replace `your-gemini-api-key` with your Google Gemini API key (get it from [Google AI Studio](https://makersuite.google.com/app/apikey))
 
 ### 3. Deploy via Vercel Dashboard
 
@@ -40,7 +43,9 @@ REACT_APP_BACKEND_URL=https://your-backend-url.com
    - **Build Command:** `npm run build` (or leave empty to use vercel.json)
    - **Output Directory:** `build` (or leave empty to use vercel.json)
    - **Install Command:** `npm install` (or leave empty to use vercel.json)
-5. Add your environment variable (`REACT_APP_BACKEND_URL`)
+5. Add your environment variables:
+   - `REACT_APP_BACKEND_URL` - Your backend API URL
+   - `REACT_APP_GEMINI_API_KEY` - Your Gemini API key
 6. Click "Deploy"
 
 ### 4. Deploy via CLI (Alternative)
@@ -72,13 +77,15 @@ The frontend is configured as follows:
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `REACT_APP_BACKEND_URL` | Yes | Your backend API URL (e.g., `https://api.example.com` or `http://localhost:10000` for development) |
+| `REACT_APP_BACKEND_URL` | Yes | Your backend API URL (e.g., `https://api.example.com` or `https://interview-prep-backend-viok.onrender.com`) |
+| `REACT_APP_GEMINI_API_KEY` | Yes | Your Google Gemini API key (get from [Google AI Studio](https://makersuite.google.com/app/apikey)) |
 
 ## Important Notes
 
 1. **Root Directory:** Make sure to set the root directory to `frontend` in Vercel settings
 2. **Backend URL:** The frontend will use the `REACT_APP_BACKEND_URL` environment variable to connect to your backend
-3. **CORS:** Make sure your backend allows requests from your Vercel domain
+3. **Gemini API Key:** Required for AI features (question generation, answer evaluation). Get your key from [Google AI Studio](https://makersuite.google.com/app/apikey)
+4. **CORS:** Make sure your backend allows requests from your Vercel domain
 
 ## Post-Deployment
 

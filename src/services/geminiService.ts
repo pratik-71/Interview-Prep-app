@@ -1,7 +1,14 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
+// Get Gemini API key from environment variable
+const GEMINI_API_KEY = process.env.REACT_APP_GEMINI_API_KEY || '';
+
+if (!GEMINI_API_KEY) {
+  console.warn('⚠️ REACT_APP_GEMINI_API_KEY is not set. Gemini features will not work.');
+}
+
 // Initialize Gemini AI
-const genAI = new GoogleGenerativeAI('AIzaSyCgQQG3yXqtK0tr4azQcH4TYusoRxfKThE');
+const genAI = GEMINI_API_KEY ? new GoogleGenerativeAI(GEMINI_API_KEY) : null;
 
 export interface InterviewQuestion {
   id: string;
@@ -35,6 +42,9 @@ export class GeminiService {
   private model: any;
 
   private constructor() {
+    if (!genAI) {
+      throw new Error('Gemini API key is not configured. Please set REACT_APP_GEMINI_API_KEY environment variable.');
+    }
     this.model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
   }
 
@@ -60,8 +70,12 @@ export class GeminiService {
   // Helper method to list available models (for debugging)
   static async listAvailableModels(): Promise<void> {
     try {
+      if (!GEMINI_API_KEY) {
+        console.error('Gemini API key is not configured');
+        return;
+      }
       // Note: This requires using the REST API directly
-      const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models?key=AIzaSyCgQQG3yXqtK0tr4azQcH4TYusoRxfKThE');
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_API_KEY}`);
       const data = await response.json();
       console.log('Available Gemini models:', data);
       return data;
@@ -231,6 +245,9 @@ Keep feedback brief and actionable. Be encouraging but honest.`;
       const base64Audio = btoa(Array.from(uint8Array).map(byte => String.fromCharCode(byte)).join(''))
       
       // Get the model that supports audio
+      if (!genAI) {
+        throw new Error('Gemini API key is not configured');
+      }
       const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
       
       const prompt = `You are an expert interview evaluator. Analyze this audio answer to the question: "${question}"
