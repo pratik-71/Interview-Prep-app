@@ -65,7 +65,27 @@ class DashboardService {
       }
 
       const data = await response.json();
-      return data;
+      
+      console.log('📊 Dashboard Service - Raw backend response:', data);
+      
+      // Backend now returns progressStats directly as progress
+      // Ensure all fields are present with defaults
+      const transformedData: DashboardData = {
+        progress: {
+          total_tests: data.progress?.total_tests ?? 0,
+          total_questions: data.progress?.total_questions ?? 0,
+          total_marks: data.progress?.total_marks ?? 0,
+          best_marks: data.progress?.best_marks ?? 0,
+          total_time: data.progress?.total_time ?? 0,
+          average_score: data.progress?.average_score ?? 0
+        },
+        recentTests: data.recentTests || [],
+        technologyPerformance: data.technologyPerformance || []
+      };
+      
+      console.log('📊 Dashboard Service - Transformed data:', transformedData);
+      
+      return transformedData;
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       throw error;

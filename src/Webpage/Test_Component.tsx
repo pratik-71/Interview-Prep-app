@@ -305,10 +305,10 @@ const TestComponent: React.FC = () => {
     const answeredQuestions = Object.keys(state.questionMarks).length;
     if (answeredQuestions === 0) return null;
 
-    // Calculate total marks and max possible marks correctly
+    // Calculate total marks and max possible marks based ONLY on answered questions
+    // Max possible marks = answered questions × 10 (each question is out of 10)
     // Audio answers are out of 100, text answers are out of 10
     let totalMarks = 0;
-    let maxPossibleMarks = 0;
     
     Object.entries(state.questionMarks).forEach(([index, marks]) => {
       const questionIndex = parseInt(index);
@@ -321,13 +321,15 @@ const TestComponent: React.FC = () => {
         // Audio answers are out of 100, normalize to 10 for consistency
         const normalizedMarks = (marks / 100) * 10;
         totalMarks += normalizedMarks;
-        maxPossibleMarks += 10;
       } else {
         // Text answers are already out of 10
         totalMarks += marks;
-        maxPossibleMarks += 10;
       }
     });
+    
+    // Max possible marks = number of answered questions × 10
+    // This ensures we only consider answered questions, not total questions
+    const maxPossibleMarks = answeredQuestions * 10;
     
     const averageMarks = totalMarks / answeredQuestions;
     const percentage = maxPossibleMarks > 0 ? (totalMarks / maxPossibleMarks) * 100 : 0;
