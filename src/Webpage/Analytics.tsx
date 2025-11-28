@@ -13,10 +13,9 @@ import {
   Tooltip,
   Legend,
   Filler,
-  BarElement,
-  ArcElement
+  BarElement
 } from 'chart.js';
-import { Line, Bar, Doughnut } from 'react-chartjs-2';
+import { Line, Bar } from 'react-chartjs-2';
 
 // Register Chart.js components
 ChartJS.register(
@@ -25,7 +24,6 @@ ChartJS.register(
   PointElement,
   LineElement,
   BarElement,
-  ArcElement,
   Title,
   Tooltip,
   Legend,
@@ -94,11 +92,12 @@ const Analytics: React.FC = () => {
   const statsRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<HTMLDivElement>(null);
 
-  // Advanced analytics calculations
+  // Advanced analytics calculations - use ALL test data from backend
   const advancedStats = useMemo(() => {
-    if (!analytics?.recentTests?.length) return null;
+    // Use recentTests for calculations (now contains all tests from backend)
+    const tests = analytics?.recentTests || [];
+    if (tests.length === 0) return null;
     
-    const tests = analytics.recentTests;
     const totalTests = tests.length;
     const totalQuestions = tests.reduce((sum, test) => sum + (test.questions_answered || 0), 0);
     // time_spent is in minutes, convert to seconds for calculations
@@ -116,22 +115,23 @@ const Analytics: React.FC = () => {
       return sum + ((test.questions_answered || 0) / testTotal);
     }, 0) / totalTests) * 100 : 0;
     
-    // Performance trends
-    const recentScores = tests.slice(0, 5).map(test => test.percentage_score || 0);
+    // Performance trends - compare most recent vs older tests
+    const sortedTests = [...tests].sort((a, b) => new Date(b.test_date).getTime() - new Date(a.test_date).getTime());
+    const recentScores = sortedTests.slice(0, Math.min(5, sortedTests.length)).map(test => test.percentage_score || 0);
     const performanceTrend = recentScores.length > 1 ? 
       (recentScores[0] - recentScores[recentScores.length - 1]) : 0;
     
     // Time efficiency (questions per minute) - time_spent is already in minutes
     const timeEfficiency = totalTimeSpentMinutes > 0 ? (totalQuestions / totalTimeSpentMinutes) : 0;
     
-    // Best and worst performance
-    const scores = tests.map(test => test.percentage_score);
-    const bestScore = Math.max(...scores);
-    const worstScore = Math.min(...scores);
+    // Best and worst performance - filter out zero scores
+    const scores = tests.map(test => test.percentage_score || 0).filter(s => s > 0);
+    const bestScore = scores.length > 0 ? Math.max(...scores) : 0;
+    const worstScore = scores.length > 0 ? Math.min(...scores) : 0;
     
     // Consistency (standard deviation of scores)
-    const meanScore = scores.reduce((sum, score) => sum + score, 0) / scores.length;
-    const variance = scores.reduce((sum, score) => sum + Math.pow(score - meanScore, 2), 0) / scores.length;
+    const meanScore = scores.length > 0 ? scores.reduce((sum, score) => sum + score, 0) / scores.length : 0;
+    const variance = scores.length > 0 ? scores.reduce((sum, score) => sum + Math.pow(score - meanScore, 2), 0) / scores.length : 0;
     const consistency = Math.sqrt(variance);
     
     return {
@@ -260,21 +260,6 @@ const Analytics: React.FC = () => {
     };
   }, [analytics]);
 
-  const skillDistributionData = useMemo(() => {
-    const labels = analytics?.technologyPerformance?.map(t => t.technology) || [];
-    const data = analytics?.technologyPerformance?.map(t => t.average_score) || [];
-    const palette = ['#3B82F6','#10B981','#F59E0B','#EF4444','#8B5CF6','#06B6D4','#14B8A6','#EAB308'];
-    const colors = labels.map((_, i) => palette[i % palette.length]);
-    return {
-      labels,
-      datasets: [{
-        data,
-        backgroundColor: colors,
-        borderWidth: 0,
-        hoverOffset: 10
-      }]
-    };
-  }, [analytics]);
 
   // Time efficiency chart options
   const getTimeEfficiencyOptions = (title: string) => ({
@@ -471,38 +456,6 @@ const Analytics: React.FC = () => {
     }
   });
 
-  const getDoughnutChartOptions = (title: string) => ({
-    responsive: true,
-    maintainAspectRatio: false,
-    cutout: '60%',
-    plugins: {
-      legend: {
-        display: true,
-        position: 'bottom' as const,
-        labels: {
-          color: textColor,
-          font: { size: 12, weight: 'normal' as const },
-          padding: 20
-        }
-      },
-      title: {
-        display: true,
-        text: title,
-        color: textColor,
-        font: { size: 16, weight: 'bold' as const },
-        padding: { bottom: 20 }
-      },
-      tooltip: {
-        backgroundColor: cardColor,
-        titleColor: textColor,
-        bodyColor: textSecondaryColor,
-        borderColor: borderColor,
-        borderWidth: 1,
-        cornerRadius: 8,
-        displayColors: true
-      }
-    }
-  });
 
   const fetchAnalytics = useCallback(async () => {
     try {
@@ -924,43 +877,6 @@ const Analytics: React.FC = () => {
                 </div>
               </div>
 
-              {/* Skill Distribution */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                <div className="p-4 rounded-xl" style={{ backgroundColor: cardColor, border: `1px solid ${borderColor}` }}>
-                  <div className="h-64 sm:h-80">
-                    <Doughnut data={skillDistributionData} options={getDoughnutChartOptions('Skill Distribution')} />
-                  </div>
-                </div>
-
-                <div className="p-4 rounded-xl" style={{ backgroundColor: cardColor, border: `1px solid ${borderColor}` }}>
-                  <h4 className="font-semibold mb-4" style={{ color: textColor }}>Skill Performance</h4>
-                  <div className="space-y-4">
-                    {skillDistributionData.labels.map((skill, index) => (
-                      <div key={index} className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex justify-between items-center mb-2">
-                            <span className="text-sm font-medium" style={{ color: textColor }}>
-                              {skill}
-                            </span>
-                            <span className="text-sm font-bold" style={{ color: primaryColor }}>
-                              {skillDistributionData.datasets[0].data[index]}%
-                            </span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-3">
-                            <div
-                              className="h-3 rounded-full transition-all duration-1000"
-                              style={{ 
-                                width: `${skillDistributionData.datasets[0].data[index]}%`,
-                                backgroundColor: skillDistributionData.datasets[0].backgroundColor[index]
-                              }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
             </div>
           )}
 
@@ -1002,7 +918,7 @@ const Analytics: React.FC = () => {
                       <div>
                         <p style={{ color: textSecondaryColor }}>Total Marks</p>
                         <p className="font-semibold" style={{ color: textColor }}>
-                          {test.max_possible_marks}/{test.total_marks.toFixed(1)}
+                          {test.total_marks.toFixed(1)}/{test.max_possible_marks}
                         </p>
                       </div>
                       <div>
@@ -1055,11 +971,6 @@ const Analytics: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="p-4 rounded-xl" style={{ backgroundColor: cardColor, border: `1px solid ${borderColor}` }}>
-                    <div className="h-80">
-                      <Doughnut data={skillDistributionData} options={getDoughnutChartOptions('Technology Mastery')} />
-                    </div>
-                  </div>
                 </div>
               </div>
 

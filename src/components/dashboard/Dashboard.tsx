@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../zustand_store/auth_store';
 import { useThemeStore } from '../../zustand_store/theme_store';
 import { gsap } from 'gsap';
-import DashboardService, { DashboardData, RecentActivity } from '../../services/dashboardService';
+import DashboardService, { RecentActivity } from '../../services/dashboardService';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -19,7 +19,6 @@ const Dashboard: React.FC = () => {
   } = useThemeStore();
 
   // Dashboard data state
-  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +45,6 @@ const Dashboard: React.FC = () => {
       const dashboardService = DashboardService.getInstance();
       const data = await dashboardService.getDashboardData(token);
       
-      setDashboardData(data);
       setRecentActivity(dashboardService.formatRecentActivity(data));
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
@@ -164,86 +162,6 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
             
-            <div 
-              ref={statsGridRef}
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-5"
-            >
-              <div 
-                className="rounded-xl p-4 md:p-5 lg:p-6 transition-all duration-300 hover:scale-105 cursor-pointer"
-                style={{ backgroundColor: cardColor }}
-              >
-                <div className="flex items-center space-x-3 md:space-x-4">
-                  <div className="h-9 w-9 md:h-10 md:w-10 lg:h-11 lg:w-11 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110" style={{ backgroundColor: primaryColor }}>
-                    <svg className="h-5 w-5 md:h-5 md:w-5 lg:h-6 lg:w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium transition-colors duration-300" style={{ color: textSecondaryColor }}>Member since</p>
-                    <p className="text-base md:text-lg lg:text-xl font-semibold transition-colors duration-300" style={{ color: textColor }}>
-                      {user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'Unknown'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              
-              <div 
-                className="rounded-xl p-4 md:p-5 lg:p-6 transition-all duration-300 hover:scale-105 cursor-pointer"
-                style={{ backgroundColor: cardColor }}
-              >
-                <div className="flex items-center space-x-3 md:space-x-4">
-                  <div className="h-9 w-9 md:h-10 md:w-10 lg:h-11 lg:w-11 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110" style={{ backgroundColor: primaryColor }}>
-                    <svg className="h-5 w-5 md:h-5 md:w-5 lg:h-6 lg:w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium transition-colors duration-300" style={{ color: textSecondaryColor }}>Practice sessions</p>
-                    <p className="text-base md:text-lg lg:text-xl font-semibold transition-colors duration-300" style={{ color: textColor }}>
-                      {isLoading ? '...' : dashboardData?.progress?.total_tests || 0}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              
-              <div 
-                className="rounded-xl p-4 md:p-5 lg:p-6 transition-all duration-300 hover:scale-105 cursor-pointer"
-                style={{ backgroundColor: cardColor }}
-              >
-                <div className="flex items-center space-x-3 md:space-x-4">
-                  <div className="h-9 w-9 md:h-10 md:w-10 lg:h-11 lg:w-11 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110" style={{ backgroundColor: primaryColor }}>
-                    <svg className="h-5 w-5 md:h-5 md:w-5 lg:h-6 lg:w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium transition-colors duration-300" style={{ color: textSecondaryColor }}>Progress score</p>
-                    <p className="text-base md:text-lg lg:text-xl font-semibold transition-colors duration-300" style={{ color: textColor }}>
-                      {isLoading ? '...' : `${dashboardData?.progress?.average_score?.toFixed(1) || 0}%`}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div 
-                className="rounded-xl p-4 md:p-5 lg:p-6 transition-all duration-300 hover:scale-105 cursor-pointer"
-                style={{ backgroundColor: cardColor }}
-              >
-                <div className="flex items-center space-x-3 md:space-x-4">
-                  <div className="h-9 w-9 md:h-10 md:w-10 lg:h-11 lg:w-11 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110" style={{ backgroundColor: primaryColor }}>
-                    <svg className="h-5 w-5 md:h-5 md:w-5 lg:h-6 lg:w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium transition-colors duration-300" style={{ color: textSecondaryColor }}>Questions answered</p>
-                    <p className="text-base md:text-lg lg:text-xl font-semibold transition-colors duration-300" style={{ color: textColor }}>
-                      {isLoading ? '...' : dashboardData?.progress?.total_questions || 0}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
 
