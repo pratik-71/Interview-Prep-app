@@ -351,7 +351,7 @@ const Dashboard: React.FC = () => {
               </svg>
             </div>
                   <h3 className="text-xl md:text-2xl font-bold mb-3 transition-colors duration-300" style={{ color: textColor }}>
-                    Ask AI
+                    Ask Me
             </h3>
                   <p className="text-base md:text-lg transition-colors duration-300" style={{ color: textSecondaryColor }}>
                     Get instant answers to your questions and learn from our AI-powered assistant.

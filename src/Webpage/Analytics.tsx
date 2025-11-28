@@ -100,24 +100,29 @@ const Analytics: React.FC = () => {
     
     const tests = analytics.recentTests;
     const totalTests = tests.length;
-    const totalQuestions = tests.reduce((sum, test) => sum + test.questions_answered, 0);
-    const totalTimeSpent = tests.reduce((sum, test) => sum + test.time_spent, 0);
-    const totalMarks = tests.reduce((sum, test) => sum + test.total_marks, 0);
-    const maxPossibleMarks = tests.reduce((sum, test) => sum + test.max_possible_marks, 0);
+    const totalQuestions = tests.reduce((sum, test) => sum + (test.questions_answered || 0), 0);
+    // time_spent is in minutes, convert to seconds for calculations
+    const totalTimeSpentMinutes = tests.reduce((sum, test) => sum + (test.time_spent || 0), 0);
+    const totalTimeSpentSeconds = totalTimeSpentMinutes * 60;
+    const totalMarks = tests.reduce((sum, test) => sum + (test.total_marks || 0), 0);
+    const maxPossibleMarks = tests.reduce((sum, test) => sum + (test.max_possible_marks || 0), 0);
     
     // Calculate advanced metrics
-    const averageScore = totalMarks / maxPossibleMarks * 100 || 0;
-    const averageTimePerQuestion = totalQuestions > 0 ? totalTimeSpent / totalQuestions : 0;
-    const averageTimePerTest = totalTests > 0 ? totalTimeSpent / totalTests : 0;
-    const completionRate = totalQuestions > 0 ? (tests.reduce((sum, test) => sum + (test.questions_answered / test.total_questions), 0) / totalTests) * 100 : 0;
+    const averageScore = maxPossibleMarks > 0 ? (totalMarks / maxPossibleMarks) * 100 : 0;
+    const averageTimePerQuestion = totalQuestions > 0 ? totalTimeSpentSeconds / totalQuestions : 0; // in seconds
+    const averageTimePerTest = totalTests > 0 ? totalTimeSpentMinutes / totalTests : 0; // in minutes
+    const completionRate = totalTests > 0 ? (tests.reduce((sum, test) => {
+      const testTotal = test.total_questions || 1;
+      return sum + ((test.questions_answered || 0) / testTotal);
+    }, 0) / totalTests) * 100 : 0;
     
     // Performance trends
-    const recentScores = tests.slice(0, 5).map(test => test.percentage_score);
+    const recentScores = tests.slice(0, 5).map(test => test.percentage_score || 0);
     const performanceTrend = recentScores.length > 1 ? 
       (recentScores[0] - recentScores[recentScores.length - 1]) : 0;
     
-    // Time efficiency (questions per minute)
-    const timeEfficiency = totalTimeSpent > 0 ? (totalQuestions / (totalTimeSpent / 60)) : 0;
+    // Time efficiency (questions per minute) - time_spent is already in minutes
+    const timeEfficiency = totalTimeSpentMinutes > 0 ? (totalQuestions / totalTimeSpentMinutes) : 0;
     
     // Best and worst performance
     const scores = tests.map(test => test.percentage_score);
@@ -132,7 +137,7 @@ const Analytics: React.FC = () => {
     return {
       totalTests,
       totalQuestions,
-      totalTimeSpent,
+      totalTimeSpent: totalTimeSpentMinutes,
       averageScore,
       averageTimePerQuestion,
       averageTimePerTest,
@@ -215,8 +220,18 @@ const Analytics: React.FC = () => {
     if (!analytics?.recentTests?.length) return { labels: [], datasets: [] } as any;
     const sorted = [...analytics.recentTests].sort((a, b) => new Date(a.test_date).getTime() - new Date(b.test_date).getTime());
     const labels = sorted.map(t => new Date(t.test_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-    const timePerQuestion = sorted.map(t => t.questions_answered > 0 ? t.time_spent / t.questions_answered : 0);
-    const questionsPerMinute = sorted.map(t => t.time_spent > 0 ? (t.questions_answered / (t.time_spent / 60)) : 0);
+    // time_spent is in minutes, convert to seconds for time per question
+    const timePerQuestion = sorted.map(t => {
+      const answered = t.questions_answered || 0;
+      const timeMinutes = t.time_spent || 0;
+      return answered > 0 ? (timeMinutes * 60) / answered : 0; // in seconds
+    });
+    // time_spent is already in minutes
+    const questionsPerMinute = sorted.map(t => {
+      const timeMinutes = t.time_spent || 0;
+      const answered = t.questions_answered || 0;
+      return timeMinutes > 0 ? answered / timeMinutes : 0;
+    });
     
     return {
       labels,
@@ -541,9 +556,11 @@ const Analytics: React.FC = () => {
     );
   };
 
-  const formatTime = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
+  const formatTime = (timeInMinutes: number) => {
+    // time_spent is stored in minutes, convert to minutes and seconds
+    const totalSeconds = Math.round(timeInMinutes * 60);
+    const minutes = Math.floor(totalSeconds / 60);
+    const remainingSeconds = totalSeconds % 60;
     return `${minutes}m ${remainingSeconds}s`;
   };
 
@@ -983,9 +1000,9 @@ const Analytics: React.FC = () => {
                         </p>
                       </div>
                       <div>
-                        <p style={{ color: textSecondaryColor }}>Marks</p>
+                        <p style={{ color: textSecondaryColor }}>Total Marks</p>
                         <p className="font-semibold" style={{ color: textColor }}>
-                          {test.total_marks}/{test.max_possible_marks}
+                          {test.max_possible_marks}/{test.total_marks.toFixed(1)}
                         </p>
                       </div>
                       <div>

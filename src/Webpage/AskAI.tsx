@@ -130,7 +130,7 @@ const AskAI: React.FC = () => {
 	};
 
 	return (
-		<div className="flex flex-col transition-colors duration-300 h-full" 
+		<div className="flex flex-col transition-colors duration-300 h-full min-h-0 overflow-hidden" 
 		     style={{ backgroundColor: backgroundColor }}>
 			
 			{/* Header Section - Fixed */}
@@ -148,7 +148,7 @@ const AskAI: React.FC = () => {
 							</svg>
 						</div>
 						<h1 className="text-lg sm:text-xl md:text-2xl font-bold transition-all duration-200 hover:scale-105" style={{ color: textColor }}>
-							Ask AI
+							Ask Me
 						</h1>
 					</div>
 				</div>
@@ -158,6 +158,10 @@ const AskAI: React.FC = () => {
 			<div 
 				ref={messagesContainerRef}
 				className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 lg:px-8 custom-scrollbar"
+				style={{ 
+					overflowY: 'auto',
+					WebkitOverflowScrolling: 'touch'
+				}}
 			>
 				<div className="max-w-4xl mx-auto py-6">
 					{/* Messages */}

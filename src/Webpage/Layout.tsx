@@ -457,7 +457,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2v-5a2 2 0 00-1.106-1.788l-5-2.5a2 2 0 00-1.788 0l-5 2.5A2 2 0 004 14v5a2 2 0 002 2z" />
                     </svg>
                   </div>
-                  <span className="font-medium">Ask AI</span>
+                  <span className="font-medium">Ask Me</span>
                 </button>
                   </div>
 
@@ -494,8 +494,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       )}
 
       {/* Main Content */}
-      <div className={`flex-1 flex flex-col min-h-0 ${location.pathname === '/ask-ai' ? '' : 'overflow-hidden'}`}>
-        <div className={`flex-1 ${location.pathname === '/ask-ai' ? '' : 'overflow-y-auto'}`}>
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-y-auto">
           {children}
         </div>
       </div>

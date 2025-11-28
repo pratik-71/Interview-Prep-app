@@ -203,6 +203,7 @@ const TestComponent: React.FC = () => {
   // COMPLETELY DIFFERENT APPROACH: Direct DOM manipulation timer
   const timerRef = useRef<HTMLSpanElement>(null);
   const questionStartTimeRef = useRef<number>(0);
+  const questionEndTimeRef = useRef<number>(0); // Store when submit was clicked
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
   // Textarea refs for direct DOM manipulation
@@ -216,8 +217,9 @@ const TestComponent: React.FC = () => {
       clearInterval(timerIntervalRef.current);
     }
     
-    // Reset timer start time
+    // Reset timer start time and end time
     questionStartTimeRef.current = Date.now();
+    questionEndTimeRef.current = 0; // Reset end time for new question
     
     // Update display immediately to 0:00
     if (timerRef.current) {
@@ -227,7 +229,9 @@ const TestComponent: React.FC = () => {
     // Start new interval that ONLY updates the DOM element
     timerIntervalRef.current = setInterval(() => {
       if (timerRef.current && questionStartTimeRef.current > 0) {
-        const elapsed = Math.floor((Date.now() - questionStartTimeRef.current) / 1000);
+        // Use end time if submit was clicked, otherwise use current time
+        const endTime = questionEndTimeRef.current > 0 ? questionEndTimeRef.current : Date.now();
+        const elapsed = Math.floor((endTime - questionStartTimeRef.current) / 1000);
         const minutes = Math.floor(elapsed / 60);
         const seconds = elapsed % 60;
         timerRef.current.textContent = `${minutes}:${String(seconds).padStart(2, '0')}`;
@@ -301,10 +305,32 @@ const TestComponent: React.FC = () => {
     const answeredQuestions = Object.keys(state.questionMarks).length;
     if (answeredQuestions === 0) return null;
 
-    const totalMarks = Object.values(state.questionMarks).reduce((sum, marks) => sum + marks, 0);
-    const maxPossibleMarks = answeredQuestions * 10; // Assuming 10 is max per question
+    // Calculate total marks and max possible marks correctly
+    // Audio answers are out of 100, text answers are out of 10
+    let totalMarks = 0;
+    let maxPossibleMarks = 0;
+    
+    Object.entries(state.questionMarks).forEach(([index, marks]) => {
+      const questionIndex = parseInt(index);
+      const result = state.questionResults[questionIndex];
+      
+      // Check if it's an audio answer (has confidence_marks or fluency_marks)
+      const isAudioAnswer = result && 'confidence_marks' in result;
+      
+      if (isAudioAnswer) {
+        // Audio answers are out of 100, normalize to 10 for consistency
+        const normalizedMarks = (marks / 100) * 10;
+        totalMarks += normalizedMarks;
+        maxPossibleMarks += 10;
+      } else {
+        // Text answers are already out of 10
+        totalMarks += marks;
+        maxPossibleMarks += 10;
+      }
+    });
+    
     const averageMarks = totalMarks / answeredQuestions;
-    const percentage = (totalMarks / maxPossibleMarks) * 100;
+    const percentage = maxPossibleMarks > 0 ? (totalMarks / maxPossibleMarks) * 100 : 0;
 
     // Calculate breakdown by difficulty
     const difficultyBreakdown = {
@@ -317,7 +343,13 @@ const TestComponent: React.FC = () => {
       const questionIndex = parseInt(index);
       const question = allQuestions[questionIndex];
       const difficulty = question.category as keyof typeof difficultyBreakdown;
-      const marks = result.marks;
+      let marks = result.marks;
+      
+      // Normalize audio marks (out of 100) to be out of 10 for consistency
+      const isAudioAnswer = 'confidence_marks' in result;
+      if (isAudioAnswer) {
+        marks = (marks / 100) * 10;
+      }
 
       if (difficultyBreakdown[difficulty]) {
         difficultyBreakdown[difficulty].count++;
@@ -364,34 +396,39 @@ const TestComponent: React.FC = () => {
     }
   }, [token]);
 
-  // Handle test completion
+  // Handle test completion - submit progress even if only 1 question is answered
   const handleTestCompletion = useCallback(async () => {
-    const results = calculateFinalResults();
-    if (!results) return;
-
-    // Calculate total time spent
-    const endTime = Date.now();
-    const totalTimeSpent = Math.round((endTime - testStartTimeRef.current) / 1000 / 60); // in minutes
+    const answeredQuestions = Object.keys(state.questionMarks).length;
     
-    dispatch({ type: 'COMPLETE_TEST', payload: endTime });
+    // Submit progress if at least 1 question is answered
+    if (answeredQuestions > 0) {
+      const results = calculateFinalResults();
+      if (!results) return;
 
-    // Prepare analytics data
-    const analytics: TestAnalytics = {
-      technology: 'Interview Practice', // You can make this dynamic based on question type
+      // Calculate total time spent
+      const endTime = Date.now();
+      const totalTimeSpent = Math.round((endTime - testStartTimeRef.current) / 1000 / 60); // in minutes
+      
+      dispatch({ type: 'COMPLETE_TEST', payload: endTime });
+
+      // Prepare analytics data
+      const analytics: TestAnalytics = {
+        technology: 'Interview Practice', // You can make this dynamic based on question type
         totalQuestions: allQuestions.length,
         questionsAnswered: results.answeredQuestions,
         totalMarks: results.totalMarks,
         maxPossibleMarks: results.maxPossibleMarks,
         percentageScore: results.percentage,
-      timeSpent: totalTimeSpent
-    };
+        timeSpent: totalTimeSpent
+      };
 
-    // Send analytics to backend
-    await sendAnalyticsToBackend(analytics);
+      // Send analytics to backend
+      await sendAnalyticsToBackend(analytics);
+    }
 
-    // Show final results
+    // Show final results (even if no questions answered)
     dispatch({ type: 'SET_SHOW_FINAL_RESULTS', payload: true });
-  }, [calculateFinalResults, allQuestions.length, sendAnalyticsToBackend]);
+  }, [calculateFinalResults, allQuestions.length, sendAnalyticsToBackend, state.questionMarks]);
 
   // Check if test should auto-complete
   useEffect(() => {
@@ -407,7 +444,33 @@ const TestComponent: React.FC = () => {
     dispatch({ type: 'SET_SHOW_EXIT_MODAL', payload: true });
   };
 
-  const handleConfirmExit = () => {
+  const handleConfirmExit = async () => {
+    // Submit progress if at least 1 question is answered before exiting
+    const answeredQuestions = Object.keys(state.questionMarks).length;
+    if (answeredQuestions > 0) {
+      const results = calculateFinalResults();
+      if (results) {
+        const endTime = Date.now();
+        const totalTimeSpent = Math.round((endTime - testStartTimeRef.current) / 1000 / 60);
+        
+        const analytics: TestAnalytics = {
+          technology: 'Interview Practice',
+          totalQuestions: allQuestions.length,
+          questionsAnswered: results.answeredQuestions,
+          totalMarks: results.totalMarks,
+          maxPossibleMarks: results.maxPossibleMarks,
+          percentageScore: results.percentage,
+          timeSpent: totalTimeSpent
+        };
+
+        try {
+          await sendAnalyticsToBackend(analytics);
+        } catch (error) {
+          console.error('Failed to save progress on exit:', error);
+        }
+      }
+    }
+    
     // Mobile-friendly navigation - always go to practice instead of relying on history
     if (isMobile) {
       navigate('/practice');
@@ -439,6 +502,15 @@ const TestComponent: React.FC = () => {
   const handleSubmitText = async () => {
     try {
       if (textareaValueRef.current.trim()) {
+        // Stop the timer when submit is clicked
+        if (timerIntervalRef.current) {
+          clearInterval(timerIntervalRef.current);
+          timerIntervalRef.current = null;
+        }
+        
+        // Store the end time when submit is clicked
+        questionEndTimeRef.current = Date.now();
+        
         dispatch({ type: 'SET_IS_EVALUATING_TEXT', payload: true });
         
         // Get current question for context
@@ -713,14 +785,32 @@ const TestComponent: React.FC = () => {
                   try {
                     // Prepare analytics data for current question
                     const currentQuestion = allQuestions[state.currentQuestionIndex];
+                    const result = state.questionResults[state.currentQuestionIndex];
+                    const rawMarks = state.questionMarks[state.currentQuestionIndex];
+                    
+                    // Normalize marks: audio answers are out of 100, text answers are out of 10
+                    const isAudioAnswer = result && 'confidence_marks' in result;
+                    let normalizedMarks = rawMarks;
+                    let maxMarks = 10;
+                    
+                    if (isAudioAnswer && rawMarks > 10) {
+                      // Audio answer: normalize from 0-100 to 0-10
+                      normalizedMarks = (rawMarks / 100) * 10;
+                      maxMarks = 10;
+                    } else {
+                      // Text answer: already out of 10
+                      normalizedMarks = rawMarks;
+                      maxMarks = 10;
+                    }
+                    
                     const questionData = {
                       technology: currentQuestion.category,
                       difficulty_level: currentQuestion.category,
                       question_text: currentQuestion.question,
                       user_answer: textareaValueRef.current.trim() || 'Audio Answer',
-                      marks_obtained: state.questionMarks[state.currentQuestionIndex],
-                      max_marks: 10,
-                      time_spent: Math.floor((Date.now() - questionStartTimeRef.current) / 1000), // Time spent on this question
+                      marks_obtained: normalizedMarks,
+                      max_marks: maxMarks,
+                      time_spent: Math.floor((questionEndTimeRef.current > 0 ? questionEndTimeRef.current - questionStartTimeRef.current : Date.now() - questionStartTimeRef.current) / 1000), // Time spent on this question (use end time if submit was clicked)
                       ...getAudioProperties(state.questionResults[state.currentQuestionIndex]),
                       feedback: state.questionResults[state.currentQuestionIndex]?.feedback || '',
                       test_date: new Date().toISOString()
@@ -946,6 +1036,8 @@ const TestComponent: React.FC = () => {
                        currentQuestion={allQuestions[state.currentQuestionIndex]?.question || 'Interview question'}
                        currentQuestionIndex={state.currentQuestionIndex}
                      updateQuestionMarks={updateQuestionMarks}
+                     timerIntervalRef={timerIntervalRef}
+                     questionEndTimeRef={questionEndTimeRef}
                    />
                  </div>
                </>
@@ -1188,7 +1280,9 @@ const TestComponent: React.FC = () => {
               
               {/* Message */}
                                <p className="mb-6 transition-colors duration-300" style={{ color: textSecondaryColor }}>
-                Are you sure you want to end this test? Your progress will be lost.
+                {Object.keys(state.questionMarks).length > 0 
+                  ? 'Are you sure you want to end this test? Your progress will be saved.'
+                  : 'Are you sure you want to end this test?'}
               </p>
               
               {/* Buttons */}
@@ -1235,7 +1329,7 @@ const TestComponent: React.FC = () => {
 
 export default TestComponent
 
-const RecordAnswer = ({dispatch, currentQuestion, currentQuestionIndex, updateQuestionMarks}: {dispatch: React.Dispatch<any>, currentQuestion: string, currentQuestionIndex: number, updateQuestionMarks: (questionIndex: number, marks: number, result: AnswerEvaluation | AudioAnswerEvaluation) => void}) => {
+const RecordAnswer = ({dispatch, currentQuestion, currentQuestionIndex, updateQuestionMarks, timerIntervalRef, questionEndTimeRef}: {dispatch: React.Dispatch<any>, currentQuestion: string, currentQuestionIndex: number, updateQuestionMarks: (questionIndex: number, marks: number, result: AnswerEvaluation | AudioAnswerEvaluation) => void, timerIntervalRef: React.MutableRefObject<NodeJS.Timeout | null>, questionEndTimeRef: React.MutableRefObject<number>}) => {
   const { primaryColor, textColor, cardColor, hoverColor } = useThemeStore();
   const [isRecording, setIsRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
@@ -1564,6 +1658,15 @@ const RecordAnswer = ({dispatch, currentQuestion, currentQuestionIndex, updateQu
                 onClick={async () => {
                   if (audioBlob) {
                     try {
+                      // Stop the timer when submit is clicked
+                      if (timerIntervalRef.current) {
+                        clearInterval(timerIntervalRef.current);
+                        timerIntervalRef.current = null;
+                      }
+                      
+                      // Store the end time when submit is clicked
+                      questionEndTimeRef.current = Date.now();
+                      
                       setIsEvaluating(true);
                       
                       // Evaluate audio using Gemini
