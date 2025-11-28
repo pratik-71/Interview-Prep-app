@@ -1,14 +1,26 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // Get Gemini API key from environment variable
-const GEMINI_API_KEY = process.env.REACT_APP_GEMINI_API_KEY || '';
+// Check at runtime to ensure it's available
+const getGeminiApiKey = (): string => {
+  const key = process.env.REACT_APP_GEMINI_API_KEY || '';
+  return key;
+};
+
+const GEMINI_API_KEY = getGeminiApiKey();
 
 // Log API key status (without exposing the key)
 if (!GEMINI_API_KEY) {
   console.warn('⚠️ REACT_APP_GEMINI_API_KEY is not set. Gemini features will not work.');
   console.warn('💡 To fix: Add REACT_APP_GEMINI_API_KEY=your-key-here to your .env file and restart the dev server');
+  console.warn('💡 Current env check:', {
+    hasKey: !!process.env.REACT_APP_GEMINI_API_KEY,
+    keyLength: process.env.REACT_APP_GEMINI_API_KEY?.length || 0,
+    allReactAppVars: Object.keys(process.env).filter(k => k.startsWith('REACT_APP_'))
+  });
 } else {
   console.log('✅ Gemini API key loaded successfully');
+  console.log('🔑 API Key length:', GEMINI_API_KEY.length, 'characters');
 }
 
 // Initialize Gemini AI
@@ -69,15 +81,30 @@ export class GeminiService {
     } catch (error: any) {
       console.error('❌ Gemini API call failed:', error);
       console.error('Error details:', error.message, error.stack);
+      
+      // Handle specific API key errors
+      if (error.message && error.message.includes('leaked')) {
+        throw new Error('Your Gemini API key has been reported as leaked. Please generate a new API key from https://makersuite.google.com/app/apikey and update REACT_APP_GEMINI_API_KEY in your .env file.');
+      } else if (error.message && error.message.includes('403')) {
+        throw new Error('API key access denied. Please check your Gemini API key is valid and has proper permissions.');
+      }
+      
       throw new Error(`Gemini API error: ${error.message || 'Unknown error'}`);
     }
   }
 
   public static getInstance(): GeminiService {
-    if (!GEMINI_API_KEY) {
+    // Check API key at runtime as well
+    const runtimeKey = process.env.REACT_APP_GEMINI_API_KEY || '';
+    if (!runtimeKey) {
       const error = new Error('Gemini API key is not configured. Please set REACT_APP_GEMINI_API_KEY environment variable.');
       console.error('❌ Gemini Service Error:', error.message);
       console.error('💡 Make sure REACT_APP_GEMINI_API_KEY is set in your .env file and restart the dev server');
+      console.error('🔍 Debug info:', {
+        moduleLoadKey: !!GEMINI_API_KEY,
+        runtimeKey: !!runtimeKey,
+        envKeys: Object.keys(process.env).filter(k => k.startsWith('REACT_APP_'))
+      });
       throw error;
     }
     
@@ -131,6 +158,14 @@ export class GeminiService {
     } catch (error: any) {
       console.error('❌ Error generating questions:', error);
       console.error('Error details:', error.message, error.stack);
+      
+      // Handle specific API key errors
+      if (error.message && error.message.includes('leaked')) {
+        throw new Error('Your Gemini API key has been reported as leaked. Please generate a new API key from https://makersuite.google.com/app/apikey and update REACT_APP_GEMINI_API_KEY in your .env file.');
+      } else if (error.message && error.message.includes('403')) {
+        throw new Error('API key access denied. Please check your Gemini API key is valid and has proper permissions.');
+      }
+      
       throw new Error(`Failed to generate interview questions: ${error.message || 'Unknown error'}`);
     }
   }
@@ -261,6 +296,14 @@ Keep feedback brief and actionable. Be encouraging but honest.`;
     } catch (error: any) {
       console.error('❌ Error evaluating answer:', error);
       console.error('Error details:', error.message);
+      
+      // Handle specific API key errors
+      if (error.message && error.message.includes('leaked')) {
+        throw new Error('Your Gemini API key has been reported as leaked. Please generate a new API key from https://makersuite.google.com/app/apikey and update REACT_APP_GEMINI_API_KEY in your .env file.');
+      } else if (error.message && error.message.includes('403')) {
+        throw new Error('API key access denied. Please check your Gemini API key is valid and has proper permissions.');
+      }
+      
       // Throw error instead of returning default - let the caller handle it
       throw new Error(`Failed to evaluate answer: ${error.message || 'Unknown error'}`);
     }
@@ -328,8 +371,17 @@ Please ensure the response is valid JSON.`
         fluency_marks: evaluation.fluency_marks || 0,
         feedback: evaluation.feedback || 'No feedback provided',
       }
-    } catch (error) {
-      throw new Error('Failed to evaluate audio answer')
+    } catch (error: any) {
+      console.error('❌ Error evaluating audio answer:', error);
+      
+      // Handle specific API key errors
+      if (error.message && error.message.includes('leaked')) {
+        throw new Error('Your Gemini API key has been reported as leaked. Please generate a new API key from https://makersuite.google.com/app/apikey and update REACT_APP_GEMINI_API_KEY in your .env file.');
+      } else if (error.message && error.message.includes('403')) {
+        throw new Error('API key access denied. Please check your Gemini API key is valid and has proper permissions.');
+      }
+      
+      throw new Error(`Failed to evaluate audio answer: ${error.message || 'Unknown error'}`)
     }
   }
 }
